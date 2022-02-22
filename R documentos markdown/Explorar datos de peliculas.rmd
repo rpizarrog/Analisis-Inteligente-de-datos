@@ -1,0 +1,152 @@
+---
+title: "Explorar datos de Películas"
+author: "Rubén Pizarro Gurrola"
+date: "22/2/2022"
+output: html_document
+---
+
+# Objetivo
+
+Explorar datos de películas
+
+# Descripción
+
+-   Cargar librerías
+-   Cargar datos
+-   Explorar datos
+-   Visualizar datos
+
+# Marco teórico
+
+La exploración de datos es un primer paso del análisis de datos que se utiliza para conocer y visualizar datos y descubrir conocimientos desde el mismo inicio o identificar áreas o patrones para profundizarlos más adelante.
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)  # Visualizar gráficas
+library(readr)  # Leer datos
+library(dplyr)
+
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/movies-db.csv", stringsAsFactors = TRUE )
+datos
+```
+
+## Explorar datos
+
+### head()
+
+```{r}
+head(datos, 10)
+```
+
+### tail()
+
+```{r}
+tail(datos, 10)
+```
+
+### summary()
+
+Estadísticos descriptivos
+
+```{r}
+summary(datos)
+```
+
+### str()
+
+Estructura de los datos
+
+```{r}
+str(datos)
+
+```
+
+## Visualiza datos
+
+### Variable de interés foreign, (idioma)
+
+Convertir la variable *foreign* a datos tipo factor o categórico.
+
+```{r}
+datos$foreign <- as.factor(as.character(datos$foreign))
+```
+
+#### Visualizar frecuencia de *foreign* (idioma) con *ggplot*()
+
+```{r}
+ggplot(data = datos) +
+  geom_bar(aes(x = foreign))
+
+```
+
+### Visualizar frecuencia de *foreign* (idioma) con *barplot*()
+
+La función *barplot*() no requiere la librería *ggplot2* como sucede con la función *ggplot*() anterior, sin embargo requiere de datos sumarizados o resumidos.
+
+#### Agrupar datos con funciones de dplyr
+
+```{r}
+resumen <- datos %>%
+  group_by(foreign) %>%
+  summarise(frecuencia = n())
+resumen
+
+```
+
+#### barplot()
+
+```{r}
+barplot(height = resumen$frecuencia, names.arg = resumen$foreign)
+
+```
+
+### Variable de interés genre (genero)
+
+La variable genre ya es tipo character y tipo factor, es decir se puede contar su frecuencia
+
+```{r}
+ggplot(data = datos) +
+  geom_bar(aes(x = genre))
+
+```
+
+### Visualizar frecuencia de *foreign* (idioma) con *barplot*()
+
+La función *barplot*() no requiere la librería *ggplot2* como sucede con la función *ggplot*() anterior, sin embargo requiere de datos sumarizados o resumidos.
+
+#### Agrupar datos con funciones de dplyr
+
+```{r}
+resumen <- datos %>%
+  group_by(genre) %>%
+  summarise(frecuencia = n())
+resumen
+
+```
+
+#### barplot()
+
+```{r}
+barplot(height = resumen$frecuencia, names.arg = resumen$genre)
+
+```
+
+# 
+
+# Interpretación
+
+El conjunto de datos contiene observaciones relacionadas con características de películas, el *data.frame* de datos tiene 31 observaciones y diez variables.
+
+Existe 19 películas en idioma inglés y 12 en idioma extranjero difenrete al inglés.
+
+Con respecto a la variable género de película, el género que más existe es el de drama con siete observaciones y el que menos predomina es el de aventura y ciencia ficción con uno respectiamente.
+
+Los estadísticos descriptivos arrojan que el valor medio de minutos de todas las películas es de 116.90 minutos, el valor medio del costo de las películas es de 23.193548.
