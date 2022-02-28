@@ -1,0 +1,168 @@
+---
+title: "Explorar datos FIFA"
+author: "Rubén Pizarro Gurrola"
+date: "28/2/2022"
+output: html_document
+---
+
+# Objetivo
+
+Explorar datos de jugadores de FIFA de un archivo csv por medio de librería *readr*
+
+# Descripción
+
+Identificar una ruta WEB en donde se encuentra un archivo csv que contenga varias variables con lo cual se podrá importar con la función de read (lectura) que permitirá explorar sus datos.
+
+# Marco teórico
+
+La exploración de datos es un primer paso del análisis de datos que se utiliza para explorar y visualizar datos para descubrir conocimientos desde el mismo inicio o identificar áreas o patrones para profundizarlos más. texto del vínculo.
+
+# Desarrollo
+
+Va a contener varios elementos:
+
+-   Cargar librerías
+-   Cargar datos
+-   Explorar datos
+-   Visualizar datos
+
+## Cargar librerías
+
+Se requiere instalar con anticipación estas librerías *install.packages()*
+
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(fdth)
+library(dplyr)
+library(plotly)
+
+```
+
+## Cargar datos
+
+Los datos se encuentran en la URL:<https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/datos.FIFA.limpios.csv>.
+
+Los atributos que en su estado ogirinal son de tipo character los importa como factores o categóricos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/datos.FIFA.limpios.csv", stringsAsFactors = TRUE)
+```
+
+### Estructura de los datos
+
+```{r}
+str(datos)
+
+```
+
+### Descripción de los datos
+
+```{r}
+summary(datos)
+
+```
+
+### head()
+
+```{r}
+head(datos)
+
+```
+
+### tail()
+
+```{r}
+tail(datos)
+
+```
+
+#### Nacionalidad
+
+Tabla de frecuencia con la función *fdt_cat()* de la librería *fdth*
+
+```{r}
+
+tabla.frecuencia <- fdt_cat(datos$Nationality)
+head(tabla.frecuencia, 10)
+
+
+```
+
+Gráfico de barra con funciones de *dplyr* para filtrar datos y funciones de la librería *plotly* para gráfico interactivo de barra.
+
+Se usa una variable llamada **g** para crear el gráfico y solo simplemente mostrarlo.
+
+El símbolo **%\>%** en el siguiente código significa que la instrucción continúa en la siguiente linea.
+
+```{r}
+g <- plot_ly(head(tabla.frecuencia, 10)) %>% 
+        add_trace(x = ~Category, 
+                  y = ~f, 
+                  type = 'bar', 
+                  name = 'Frecuencia',
+                  marker = list(color = '#C9EFF9'),
+                  hoverinfo = "text",           text = ~paste(round(rf * 100, 2), "%")) %>%
+  layout(title = 'Frecuencia de jugadores FIFA por Nacionalidad', 
+         xaxis = list(title = "Nacionalidades"))
+  
+g
+
+```
+
+#### Pierna preferida
+
+```{r}
+
+tabla.frecuencia <- fdt_cat(datos$Preferred.Foot)
+tabla.frecuencia
+
+
+```
+
+Se usa una variable llamada **g** para crear el gráfico y solo simplemente mostrarlo.
+
+```{r}
+g <- plot_ly(tabla.frecuencia) %>% 
+        add_trace(x = ~Category, 
+                  y = ~f, 
+                  type = 'bar', 
+                  name = 'Frecuencia',
+                  marker = list(color = '#C9EFF9'),
+                  hoverinfo = "text",           text = ~paste(round(rf * 100, 2), "%")) %>%
+  layout(title = 'Frecuencia de jugadores FIFA por Pierna que usan', 
+         xaxis = list(title = "Pie preferido"))
+  
+g
+
+```
+
+#### 
+
+# Interpretación 
+
+Del conjunto de datos describa las siguientes preguntas:
+
+-   ¿Cuántas observaciones hay y cuántas variables?
+
+El conjunto de datos tiene 17955 observaciones y 50 variables.
+
+-   ¿De cuál nacionalidad hay mayor número de jugadores?. Determinar los primeros diez. De acuerdo al análisis y al gráfico de barra, exisen: de England 1660, de Germany 1198 y de Spain 1072. (Inglaterra, Alemania y España respecivamente).
+
+```{=html}
+<!-- -->
+```
+-   ¿Cuál es la pierna de preferencia o más frecuente que usan los jugadores, son derechos o zurdos?
+
+Hay mas jugadores derechos con 13748 y zurdos 4159.
+
+-   ¿Cuál es la edad media de los jugadores?. La media aritmética de edad es : 25.0 años
+
+-   ¿Cuál es la estatura media de los jugadores?. Variable: Estatura
+
+-   ¿Cuál es el peso medio en kgs de los jugadores?: Variable PesoKgs
+
+-   ¿Cuál es el valor medio económico de los jugadores?. Varible Valor
+
+-   ¿Cuál es el valor medio del rating de los jugadores? . Variable International.Reputation
+
+-   ¿Cuál es el jugador con mayor valor de agresión o violencia. Variable Aggression. El jugador más agresivo es B. Pearson 23 de Inglaterra
