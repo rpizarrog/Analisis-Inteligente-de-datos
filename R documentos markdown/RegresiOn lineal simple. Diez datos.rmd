@@ -1,0 +1,110 @@
+---
+title: "RegresiOn lineal simple. Diez datos"
+author: "Rubén Pizarro Gurrola"
+date: "1/3/2022"
+output: html_document
+---
+
+# Objetivo
+
+# Descripción 
+
+# Desarrollo
+
+## Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+```
+
+## Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/datos%20para%20regresion%20diez%20datos.csv")
+
+```
+
+
+## Explorar datos
+
+Los datos
+```{r}
+kable(datos, caption = "Los datos")
+```
+
+Media de x y media de y
+
+
+```{r}
+summary(datos)
+
+```
+
+## Correlación entre las variables
+```{r}
+round(cor(datos),2)
+```
+## Regresión lineal simple
+
+### Dispersión de los datos
+```{r}
+ggplot(data = datos) +
+  geom_point(aes(x = x, y = y), col='blue')
+```
+
+### Fórmula de mínimos cuadrados
+$$
+Y = a + b \cdot x
+$$
+
+Construye una tabla para determinar a y b, se manda llamar función previamente codificada para este fin.
+```{r}
+source("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/funciones/misfunciones.R")
+
+```
+
+Llamar la función que genera tabla para totales y determinar a y b manualmente
+```{r}
+tabla <- f_tabla.rls(datos)
+kable(tabla, caption = "Tabla para coeficiene a y b en Correlación Lineal Simple")
+
+```
+
+Manda llamar función para obtener coeficientes a partir de la tabla
+```{r}
+coeficientes <- f.coef.a.b(tabla)
+coeficientes
+```
+
+
+### Construir el modelo usando función lm()
+```{r}
+modelo <- lm(formula = y ~ x, data = datos)
+modelo
+```
+
+### Dispersión con linea de tendencia
+```{r}
+ggplot(data = datos) +
+  geom_point(aes(x = x, y = y), col='blue') +
+  geom_line(aes(x = x, y = modelo$fitted.values), col='red')
+```
+
+
+### Predicciones
+
+Significa que para un nuevo valor de x el valor de la predicción será $Y = a + b \cdot x$.
+
+```{r}
+x <- 15
+a <- modelo$coefficients[1]
+b <- modelo$coefficients[2]
+Y_pred <- a + b * x
+paste("La predicción para un valor de x = ", x,  " es: ", round(Y_pred, 4))
+```
+# Interpretación
+
+Pendiente ...
+
+
