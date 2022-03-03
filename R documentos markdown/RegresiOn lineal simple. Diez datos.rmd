@@ -7,6 +7,8 @@ output: html_document
 
 # Objetivo
 
+Construir un modelo de regresón lineal simple con datos de dos variables y predecir un valor con el modelo.
+
 # Descripción 
 
 # Desarrollo
@@ -94,15 +96,30 @@ ggplot(data = datos) +
 
 ### Predicciones
 
+#### Predicciones usando la fórmula de mínimos cuadrados.
+
 Significa que para un nuevo valor de x el valor de la predicción será $Y = a + b \cdot x$.
+
 
 ```{r}
 x <- 15
 a <- modelo$coefficients[1]
 b <- modelo$coefficients[2]
-Y_pred <- a + b * x
-paste("La predicción para un valor de x = ", x,  " es: ", round(Y_pred, 4))
+Y_pred1 <- a + b * x
+paste("La predicción para un valor de x = ", x,  " es: ", round(Y_pred1, 4))
 ```
+
+#### Predicciones usando la función predict().
+
+Con varios valores
+```{r}
+x <- c(15, 16, 17)
+Y.pred2 <- predict(object = modelo, newdata = data.frame(x = x))
+paste("Las predicciones para 15, 16 y 17 respectivamente son: ")
+paste(round(Y.pred2, 4), sep = ", ")
+```
+
+
 # Interpretación
 
 Pendiente ...
