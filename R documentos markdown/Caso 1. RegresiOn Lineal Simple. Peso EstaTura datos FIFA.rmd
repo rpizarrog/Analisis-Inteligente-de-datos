@@ -1,0 +1,254 @@
+---
+title: "Caso 1. Regresión Lineal Simple. Peso EstaTura datos FIFA"
+author: "Rubén Pizarro Gurrola"
+date: "3/3/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Realizar predicciones de peso de jugadores de fútbol con los datos de FIFA de acuerdo a la variable estatura a partir de un modelo de regresión lineal simple.
+
+# Descripción
+
+-   Cargar librerías
+
+-   Cargar datos
+
+-   Seleccionar variables de estudio estatura y peso
+
+-   Crear datos de entrenamiento y datos de validación
+
+-   Construir el modelo de regresión lineal simple
+
+-   Evaluar el modelo
+
+-   Realizar predicciones con los datos validación
+
+-   Realizar predicciones con datos nuevos
+
+-   Interpretación del caso
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/datos.FIFA.limpios.csv", stringsAsFactors = TRUE)
+
+```
+
+Explorar datos
+
+```{r}
+str(datos)
+
+```
+
+```{r}
+print("Estatura")
+summary(datos$Estatura)
+print("Peso")
+summary(datos$PesoKgs)
+
+
+```
+
+## Limpiar datos
+
+Se detectaron 48 registros con valores NA por lo cual se quitan del conjunto de datos ya que solo representan tan solo el 0.26% o sea menos del 1%.
+
+```{r}
+datos.limpios <- subset(datos, !is.na(Estatura))
+
+```
+
+## Partir datos
+
+Se identifica el numero de observaciones n *y se* siembra la semilla a 2022 para construir los mismos valores aleatorios por la función *createDataPartition().*
+
+```{r}
+n <- nrow(datos.limpios)
+set.seed(2022)
+
+```
+
+De manera aleatoria se construyen los datos de entrenamiento y los datos de validación.
+
+En la variable *entrena* se generan los registros que van a ser los datos de entrenamiento, de tal forma que los datos de validación serán los que no sena de entrenamiento [-*entrena*].
+
+```{r}
+entrena <- createDataPartition(y = datos.limpios$PesoKgs, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos.limpios[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos.limpios[-entrena, ]
+
+
+
+
+```
+
+Mostrar los primeros 20 y últimos 20 registros de los datos de entrenamiento.
+
+Solo se muestran las variables de consecutivo *X*, *Name* y las dos variables de interés *Estatura* y *PesoKgs*.
+
+```{r}
+kable(head(datos.entrenamiento[, c('X', 'Name', 'Estatura', 'PesoKgs')], 20), caption = "Datos de entrenamiento")
+
+kable(tail(datos.entrenamiento[, c('X', 'Name', 'Estatura', 'PesoKgs')], 20), caption = "Datos de entrenamiento")
+
+```
+
+Mostrar los primeros 20 y últimos 20 registros de los datos de validación.
+
+```{r}
+kable(head(datos.validacion[, c('X', 'Name', 'Estatura', 'PesoKgs')], 20), caption = "Datos de validación")
+
+kable(tail(datos.validacion[, c('X', 'Name', 'Estatura', 'PesoKgs')], 20), caption = "Datos de validación")
+
+```
+
+Visualizar dispersión de los datos de entrenamiento con las variables de interés *Estatura* y *PesoKgs.*
+
+```{r message=FALSE, warning=FALSE}
+g <- plot_ly(data = datos.entrenamiento, 
+             x = ~Estatura, 
+             y = ~PesoKgs) %>%
+layout(title = 'Jugadores FIFA. Dispersión de estatura en metros y peso en kilogramos.')
+  
+g
+
+```
+
+## Construir el modelo
+
+Con los datos de entrenamiento construir el modelo de regresión lineal simple.
+
+$$
+Y = a + bx
+$$
+
+De las dos variables de interés, *Estatura* y *PesoKgs* se determina que la variable predictora es *Estatura y el PesoKgs* es la variable de respuesta o también*:*
+
+-   *Estatura* es variable independiente y
+
+-   *PesoKgs* es variable dependiente
+
+Es decir, la variable *PesoKgs* depende de la *Estatura*
+
+```{r}
+modelo <- lm(data = datos.entrenamiento, formula = PesoKgs ~ Estatura)
+modelo
+
+```
+
+### Coeficientes del modelo
+
+Se determinan los valores de a y b de la fórmula $Y = a+bx$
+
+```{r}
+a <- modelo$coefficients[1]
+b <- modelo$coefficients[2]
+
+paste("Valor de la abcisa a es   : ", round(a, 6))
+paste("Valor de la pendiente b es: ", round(b, 6))
+
+```
+
+### Linea de tendencia del modelo
+
+Con la el valor de los valores de tendencia o valores ajustados del modelo se visualiza la recta de tendencia del modelo.
+
+La gráfica *g* se construye por partes, primero la dispersión, segundo la linea de tendencia, tercero se agrega el título, para luego solo mostrar la gráfica *g*.
+
+```{r}
+
+g <- plot_ly(data = datos.entrenamiento, 
+             x = ~Estatura, 
+             y = ~PesoKgs, 
+             name = 'Dispersión',
+             type = 'scatter', 
+             mode = 'markers', 
+             color = I('blue')) 
+g <- g %>% add_trace(x = ~Estatura,
+                     y = ~modelo$fitted.values, name = 'Tendencia', mode = 'lines+markers', color = I('red'))
+g <- g %>%
+layout(title = 'Jugadores FIFA. Dispersión y Tendencia de estatura en metros y peso en kilogramos.')
+g
+```
+
+## Predicciones
+
+Con los datos de validación, se hacen predicciones con la función *predict(),* luego se presentan algunas de las mismas prediccciones que pueden ser los mismos valores de *Estatura* o con nuevos valores calculadas manualmente usando la fórmula $Y = a + bx$.
+
+Se hace un *data.frame* de comparaciones con lo cual se presentan los valores reales y los valores de las predicciones. Se presenta solo las primeras 20 y últimas 20 predicciones.
+
+```{r}
+predicciones <- predict(object = modelo, newdata = datos.validacion)
+
+comparaciones <- data.frame(Estatura = datos.validacion$Estatura, PesoKgs = datos.validacion$PesoKgs, predicccion = predicciones)
+ 
+
+
+
+```
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+
+```
+
+```{r}
+  kable(x = tail(comparaciones, 20), caption = "Predicciones")
+```
+
+```{r}
+x <- c(1.70, 1.80, 1.90)
+
+Y = a + b * x
+Y 
+
+```
+
+## Evaluación del modelo
+
+-   ¿Que tan bien predice el modelo?
+
+-   ¿Es bueno el modelo de regresión lineal simple ?
+
+```{r}
+summary(modelo)
+
+```
+
+De acuerdo al estadístico Multiple R-squared con valor 0.5681, significa que la variable Estatura representa tan solo el 56.81% del valor del PesoKgs.
+
+Este valor Multiple R-squared es relativo al compararlo con un criterio inicial. Por ejemplo, si al principio se hubiera establecido que el modelo se acepta si hay un 70% o mas el modelo se acepta, entonces bajo esta premisa tal vez el modelo no se acepta ya que Multiple R-squared es 0.5666 que está por debajo del 70%
+
+Sin embargo, si se hubiera establecido que se acepta con un valor por encima del 50%, entonces este modelo si se acepta ya que Multiple R-squared es 0.5666 o 56.66%.
+
+Se observan que las variables estadísticas tanto el coeficiente de intersección como la variable predictiva *Estatura* si son altamente y estadísticamente significativas por debajo del 0.001 o con un nivel de confianza mayor al 99.9%.
+
+# Interpretación
+
+Pendiente de todo el caso.
