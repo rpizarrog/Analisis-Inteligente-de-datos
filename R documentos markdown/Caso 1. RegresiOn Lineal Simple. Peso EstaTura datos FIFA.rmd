@@ -46,6 +46,7 @@ library(knitr) # Para datos tabulares
 library(ggplot2) # Para visualizar
 library(plotly)
 library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse 
 ```
 
 ## Cargar datos
@@ -148,6 +149,12 @@ $$
 Y = a + bx
 $$
 
+ó
+
+$$
+Y = \beta_0 + \beta_1\cdot x
+$$
+
 De las dos variables de interés, *Estatura* y *PesoKgs* se determina que la variable predictora es *Estatura y el PesoKgs* es la variable de respuesta o también*:*
 
 -   *Estatura* es variable independiente y
@@ -236,18 +243,66 @@ Y
 
 -   ¿Es bueno el modelo de regresión lineal simple ?
 
+-   ¿Cuáles estadísticos hay que calcular e identificar para evaluar el modelo?
+
 ```{r}
 summary(modelo)
 
 ```
 
-De acuerdo al estadístico Multiple R-squared con valor 0.5681, significa que la variable Estatura representa tan solo el 56.81% del valor del PesoKgs.
+### *Multiple R-squared*
 
-Este valor Multiple R-squared es relativo al compararlo con un criterio inicial. Por ejemplo, si al principio se hubiera establecido que el modelo se acepta si hay un 70% o mas el modelo se acepta, entonces bajo esta premisa tal vez el modelo no se acepta ya que Multiple R-squared es 0.5666 que está por debajo del 70%
+De acuerdo al estadístico *Multiple R-squared* con valor 0.5681, significa que la variable Estatura representa tan solo el 56.81% del valor del PesoKgs.
+
+El coeficiente de determinación identificado por expresión *R^2* e identificado como *Multiple R-squared* determina la calidad del modelo para replicar los resultados y la proporción de variación de los resultados que puede explicarse por el modelo.
+
+Este valor Multiple R-squared es relativo al compararlo con un criterio inicial. Por ejemplo, si al principio se hubiera establecido que el modelo se acepta si hay un 70% o mas el modelo se acepta, entonces bajo esta premisa tal vez el modelo no se acepta ya que Multiple R-squared es 0.5666 que está por debajo del 70%.
 
 Sin embargo, si se hubiera establecido que se acepta con un valor por encima del 50%, entonces este modelo si se acepta ya que Multiple R-squared es 0.5666 o 56.66%.
 
-Se observan que las variables estadísticas tanto el coeficiente de intersección como la variable predictiva *Estatura* si son altamente y estadísticamente significativas por debajo del 0.001 o con un nivel de confianza mayor al 99.9%.
+### Variables estadísticamente significativas
+
+Se observan que las variables estadísticas tanto el coeficiente de intersección como la variable predictiva *Estatura* si son altamente y estadísticamente significativas por debajo del 0.001 o con un nivel de confianza mayor al 99.9%. Se observa con los '***' en las variables.
+
+### Error Cuadrático Medio (RMSE)
+
+La raiz del  *Error Cuadrático Medio (RMSE)* es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+RMSE = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+RMSE es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el RMSE, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el RMSE, mejor podrá un modelo ajustar los datos.
+
+Usando el *data.frame comparaciones* previamente construído se determina el RMSE manualmente.
+
+```{r}
+n <- nrow(comparaciones)
+rmse1 <- sqrt(sum((comparaciones$PesoKgs - comparaciones$predicccion)^2) / n)
+rmse1
+```
+
+Se puede usar la función *rmse()* de la librería *Metrics*
+
+```{r}
+rmse2 <- rmse(actual = comparaciones$PesoKgs, predicted = comparaciones$predicccion)
+rmse2
+
+```
+
+Usando la función *RMSE()* de la librería *caret*
+
+```{r}
+rmse3 <- RMSE(obs = comparaciones$PesoKgs, pred = comparaciones$predicccion)
+rmse3
+
+```
+
+En todos los cálculos el valor de *rmse* es de 4.631735, ¿que significa el valor de `r rmse3`?
+
+Con base en RMSE, se puede comparar dos modelos diferentes entre sí y poder identificar qué modelo se ajusta mejor a la predicción de los datos.
 
 # Interpretación
 
