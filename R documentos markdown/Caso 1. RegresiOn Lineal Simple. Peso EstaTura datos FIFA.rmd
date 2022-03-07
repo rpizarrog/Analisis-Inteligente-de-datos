@@ -87,6 +87,10 @@ Se identifica el numero de observaciones n *y se* siembra la semilla a 2022 para
 
 ```{r}
 n <- nrow(datos.limpios)
+
+# Modificar la semilla estableciendo como par´metro los útimos cuatro dígitos de su no de control. 
+# Ej. set.seed(0732), o set.seed(1023)
+# set.seed(2022) 
 set.seed(2022)
 
 ```
