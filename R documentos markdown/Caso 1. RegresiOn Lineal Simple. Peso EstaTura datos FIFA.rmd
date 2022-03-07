@@ -13,7 +13,7 @@ output:
 
 # Objetivo
 
-Realizar predicciones de peso de jugadores de fútbol con los datos de FIFA de acuerdo a la variable estatura a partir de un modelo de regresión lineal simple.
+Construir y evaluar un modelo de regresión lineal simple para realizar predicciones de peso de jugadores de fútbol con los datos de FIFA de acuerdo a la variable estatura
 
 # Descripción
 
@@ -27,11 +27,11 @@ Realizar predicciones de peso de jugadores de fútbol con los datos de FIFA de a
 
 -   Construir el modelo de regresión lineal simple
 
--   Evaluar el modelo
-
 -   Realizar predicciones con los datos validación
 
 -   Realizar predicciones con datos nuevos
+
+-   Evaluar el modelo
 
 -   Interpretación del caso
 
@@ -254,7 +254,7 @@ summary(modelo)
 
 De acuerdo al estadístico *Multiple R-squared* con valor 0.5681, significa que la variable Estatura representa tan solo el 56.81% del valor del PesoKgs.
 
-El coeficiente de determinación identificado por expresión *R^2* e identificado como *Multiple R-squared* determina la calidad del modelo para replicar los resultados y la proporción de variación de los resultados que puede explicarse por el modelo.
+El coeficiente de determinación identificado por expresión *R\^2* e identificado como *Multiple R-squared* determina la calidad del modelo para replicar los resultados y la proporción de variación de los resultados que puede explicarse por el modelo.
 
 Este valor Multiple R-squared es relativo al compararlo con un criterio inicial. Por ejemplo, si al principio se hubiera establecido que el modelo se acepta si hay un 70% o mas el modelo se acepta, entonces bajo esta premisa tal vez el modelo no se acepta ya que Multiple R-squared es 0.5666 que está por debajo del 70%.
 
@@ -262,11 +262,11 @@ Sin embargo, si se hubiera establecido que se acepta con un valor por encima del
 
 ### Variables estadísticamente significativas
 
-Se observan que las variables estadísticas tanto el coeficiente de intersección como la variable predictiva *Estatura* si son altamente y estadísticamente significativas por debajo del 0.001 o con un nivel de confianza mayor al 99.9%. Se observa con los '***' en las variables.
+Se observan que las variables estadísticas tanto el coeficiente de intersección como la variable predictiva *Estatura* si son altamente y estadísticamente significativas por debajo del 0.001 o con un nivel de confianza mayor al 99.9%. Se observa con los '\*\*\*' en las variables.
 
 ### Error Cuadrático Medio (RMSE)
 
-La raiz del  *Error Cuadrático Medio (RMSE)* es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+La raiz del *Error Cuadrático Medio (RMSE)* es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
 
 $$
 RMSE = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
