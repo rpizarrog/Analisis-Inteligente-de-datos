@@ -1,0 +1,527 @@
+---
+title: "Caso 2. Comparación y evaluación de métricas de regresión lineal simple vs regresión polinomial" 
+author: "Rubén Pizarro Gurrola"
+date: "9/3/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Realizar y evaluar el rendimiento de modelos de regresión lineal simple y polinómico de variables Valor económica
+
+# Descripción
+
+-   Cargar librerías
+
+-   Cargar datos de FIFA
+
+-   Métricas a evaluar
+
+-   Explorar datos
+
+    -   Variables independiente y dependiente
+
+    -   Visualizar dispersión de los datos
+
+-   Construir datos de entrenamiento y datos de validación.
+
+-   Regresión Lineal Simple
+
+    -   Construir el modelo
+
+    -   Predicciones
+
+    -   Metricas del modelo
+
+-   Regresión Polinómica de segundo
+
+    -   Construir el modelo
+
+    -   Predicciones
+
+    -   Métricas del modelo
+
+-   Regresión Polinómica de quinto nivel
+
+    -   Construir el modelo
+
+    -   Predicciones
+
+    -   Métricas del modelo
+
+-   Interpretación
+
+# Desarrollo
+
+## Métricas a valorar en los modelos
+
+Se van a realizar y evaluar métricas de las predicciones con los modelos de regresión lineal simple y regresión polinómica con los mismos datos.
+
+Los modelos se aceptan si las métricas cumplen estos requisitos:
+
+-   El valor de R Square y R Square ajustado sobrepasa el 50%,
+
+-   Que sus variables sea estadísticamente significativas al 95%. Al menos un '\*'
+
+-   Que el valor de RMSE (Raiz del Error Estándar Medio) sea menor que : 2 000 000 (dos millones).
+
+-   Al final se deben comparar los modelos.
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse 
+
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/datos.limpios.csv", stringsAsFactors = TRUE)
+```
+
+## Explorar datos
+
+```{r}
+str(datos)
+
+```
+
+### Variables independiente y dependiente
+
+Se identifican dos variables numéricas de interés:
+
+-   *Overall*: Reputación y jerarquía internacional numérica del jugador
+
+-   *Valor*: Sería el valor económico internacional de los jugadores
+
+Se define a la variable independiente como *Overall* y la variable dependiente *Valor,* es decir, *Overall* impacta sobre *Value* o los valores de la variable *Valor* dependen de *Overall*.
+
+```{r}
+print ("Variable Overall")
+summary(datos$Overall)
+
+```
+
+```{r}
+print ("Variable Valor que significa el valor económico del jugador en moneda Euros ")
+summary(datos$Valor)
+
+```
+
+### head(datos)
+
+```{r}
+kable(head(datos[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos. Primeros 20 registros")
+
+```
+
+tail(datos)
+
+```{r}
+kable(head(datos[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos. Primeros 20 registros")
+
+```
+
+## Dispersión de los datos
+
+```{r}
+g <- plot_ly(data = datos, 
+             x = ~Overall, 
+             y = ~Valor) %>%
+layout(title = 'Jugadores FIFA. Dispersión de Overall y Valor')
+g
+```
+
+Se observa que la relación de los datos no es del todo lineal, pero se construirán los modelos de regresión lineal simple y polinómico con las mismas variables.
+
+## Datos de entrenamiento y datos de validación
+
+Sembrar semilla para la aleatoriedad de los datos
+
+```{r}
+n <- nrow(datos)
+
+# Modificar la semilla estableciendo como parámetro los útimos cuatro dígitos de su no de control. 
+# Ej. set.seed(0732), o set.seed(1023)
+# set.seed(2022) 
+set.seed(2022)
+
+```
+
+### Datos de entrenamiento
+
+De manera aleatoria se construyen los datos de entrenamiento y los datos de validación.
+
+En la variable *entrena* se generan los registros que van a ser los datos de entrenamiento, de tal forma que los datos de validación serán los que no sena de entrenamiento [-*entrena*].
+
+```{r}
+entrena <- createDataPartition(y = datos$Valor, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+
+```
+
+#### head()
+
+```{r}
+kable(head(datos.entrenamiento[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.validacion[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+### Datos de validación
+
+#### head()
+
+```{r}
+kable(head(datos.validacion[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.entrenamiento[, c('X', 'Name', 'Overall', 'Valor')], 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+## Modelos de regresión
+
+### Regresión Lineal Simple
+
+```{r}
+modelo.ls <- lm(formula = Valor ~ Overall, data = datos.entrenamiento)
+modelo.ls
+
+
+```
+
+#### Coeficientes del modelo
+
+Se determinan los valores de a y b de la fórmula $Y = a+bx$
+
+```{r}
+a <- modelo.ls$coefficients[1]
+b <- modelo.ls$coefficients[2]
+
+paste("Valor de la abcisa a es   : ", round(a, 6))
+paste("Valor de la pendiente b es: ", round(b, 6))
+
+```
+
+#### Linea de tendencia del modelo
+
+Con la el valor de los valores de tendencia o valores ajustados del modelo se visualiza la recta de tendencia del modelo.
+
+La gráfica *g* se construye por partes, primero la dispersión, segundo la linea de tendencia, tercero se agrega el título, para luego solo mostrar la gráfica *g*.
+
+```{r}
+
+g <- plot_ly(data = datos.entrenamiento, 
+             x = ~Overall, 
+             y = ~Valor, 
+             name = 'Dispersión',
+             type = 'scatter', 
+             mode = 'markers', 
+             color = I('blue')) 
+g <- g %>% add_trace(x = ~Overall,
+                     y = ~modelo.ls$fitted.values, name = 'Tendencia', mode = 'lines+markers', color = I('red'))
+g <- g %>%
+layout(title = 'Jugadores FIFA. Dispersión y Tendencia de Overall y Valor económico.')
+g
+```
+
+#### Predicciones
+
+Con los datos de validación, se hacen predicciones con la función *predict().*
+
+Se hace un *data.frame* de comparaciones con lo cual se presentan los valores reales y los valores de las predicciones. Se presenta solo las primeras 20 y últimas 20 predicciones.
+
+```{r}
+predicciones <- predict(object = modelo.ls, newdata = datos.validacion)
+
+comparaciones <- data.frame(Overall = datos.validacion$Overall, Valor = datos.validacion$Valor, predicccion = predicciones)
+ 
+
+
+
+```
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+
+```
+
+```{r}
+  kable(x = tail(comparaciones, 20), caption = "Predicciones")
+```
+
+¡Salen predicciones negativas!, ¿que significa? , no debiera haber predicciones negativas, sin embargo, esto sucede porque el modelo así lo calcula por lo estricto de la linea de tendencia.
+
+#### Determinando métricas
+
+```{r}
+res.modelo.ls <- summary(modelo.ls)
+res.modelo.ls
+
+```
+
+El coeficiente de interseción 'a' y la pendiente 'b' si son estadísticamente significativas por encima del 99.9%
+
+El valor de R Square no sobrepasa el 50% por lo que **NO SE ACEPTA** el modelo
+
+### Determinando rmse()
+
+El valor de rmse se interpreta en que tanto se desvía una predicción media sobre los valore reales.
+
+```{r}
+rmse.ls <- rmse(actual =comparaciones$Valor, predicted = comparaciones$predicccion)
+rmse.ls
+
+
+```
+
+El valor de rmse en el modelo de regresión lineal simple no está por debajo de los 2,000,000 (dos millones) que se establecieron como métrica aceptable, por lo que este modelo **NO SE ACEPTA**.
+
+### Regresión polinómica segundo nivel
+
+Se usa el argumento *poly "poly(Overall, 2)"* en la construcción del modelo para indicar que es polinomial de segunda potencia.
+
+$$
+y = β0 + β1{x_i} +β2{x_i}^2+β3{x_i}^3...+βd{x_i}^n+ϵi
+$$
+
+ó
+
+$$
+y = a + bx + cx^2 + dx^3 ...zx^n
+$$
+
+```{r}
+modelo.poly2 <- lm(formula = Valor ~ poly(Overall, 2), data = datos.entrenamiento, )
+modelo.poly2
+
+
+```
+
+#### Coeficientes del modelo
+
+Se determinan los valores de a y b de la fórmula $Y = a+bx$
+
+```{r}
+a <- modelo.poly2$coefficients[1]
+b <- modelo.poly2$coefficients[2]
+
+paste("Valor de la abcisa a es   : ", round(a, 6))
+paste("Valor de la pendiente b es: ", round(b, 6))
+
+```
+
+#### Curva de tendencia del modelo
+
+Con la el valor de los valores de tendencia o valores ajustados del modelo se visualiza la curva de tendencia del modelo.
+
+La gráfica *g* se construye por partes, primero la dispersión, segundo la curva de tendencia, tercero se agrega el título, para luego solo mostrar la gráfica *g*.
+
+```{r}
+
+g <- plot_ly(data = datos.entrenamiento, 
+             x = ~Overall, 
+             y = ~Valor, 
+             name = 'Dispersión',
+             type = 'scatter', 
+             mode = 'markers', 
+             color = I('blue')) 
+g <- g %>% add_trace(x = ~Overall,
+                     y = ~modelo.poly2$fitted.values, name = 'Tendencia', mode = 'lines+markers', color = I('red'))
+g <- g %>%
+layout(title = 'Jugadores FIFA. Dispersión y Tendencia de Overall y Valor económico.')
+g
+```
+
+#### Predicciones
+
+Con los datos de validación, se hacen predicciones con la función *predict().*
+
+Se hace un *data.frame* de comparaciones con lo cual se presentan los valores reales y los valores de las predicciones. Se presenta solo las primeras 20 y últimas 20 predicciones.
+
+```{r}
+predicciones <- predict(object = modelo.poly2, newdata = datos.validacion)
+
+comparaciones <- data.frame(Overall = datos.validacion$Overall, Valor = datos.validacion$Valor, predicccion = predicciones)
+ 
+
+
+
+```
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+
+```
+
+```{r}
+  kable(x = tail(comparaciones, 20), caption = "Predicciones")
+```
+
+#### Determinando métricas
+
+```{r}
+res.modelo.poly2 <- summary(modelo.poly2)
+res.modelo.poly2
+
+```
+
+El coeficiente de interseción 'a' y la pendiente 'b' si son estadísticamente significativas por encima del 99.9%
+
+El valor de R Square **SI** sobrepasa el 50% por lo que **SI SE ACEPTA** el modelo
+
+### Determinando rmse()
+
+El valor de rmse se interpreta en que tanto se desvía una predicción media sobre los valore reales.
+
+```{r}
+rmse.poly2 <- rmse(actual =comparaciones$Valor, predicted = comparaciones$predicccion)
+rmse.poly2
+
+
+```
+
+El valor de rmse en el modelo de regresión lineal simple no está por debajo de los 2,000,000 (dos millones) que se establecieron como métrica aceptable, por lo que este modelo **NO SE ACEPTA** por esta métrica.
+
+### Regresión polinómica quinto nivel
+
+Se usa el argumento *poly "poly(Overall, 5)"* en la construcción del modelo para indicar que es polinomial de segunda potencia.
+
+$$
+y = β0 + β1{x_i} +β2{x_i}2+β3{x_i}3…+βd{x_i}^n+ϵi
+$$
+
+y = β0 + β1{x_i} +β2{x_i}^2+β3{x_i}^3...+βd{x_i}\^n+ϵi
+
+ó
+
+$$
+y = a + bx + cx^2 + dx^3 …zx^n
+$$
+
+```{r}
+modelo.poly5 <- lm(formula = Valor ~ poly(Overall, 5), data = datos.entrenamiento, )
+modelo.poly5
+
+
+```
+
+#### Coeficientes del modelo
+
+Se determinan los valores de a y b de la fórmula $Y = a+bx$
+
+```{r}
+a <- modelo.poly5$coefficients[1]
+b <- modelo.poly5$coefficients[2]
+
+paste("Valor de la abcisa a es   : ", round(a, 6))
+paste("Valor de la pendiente b es: ", round(b, 6))
+
+```
+
+#### Curva de tendencia del modelo
+
+Con la el valor de los valores de tendencia o valores ajustados del modelo se visualiza la curva de tendencia del modelo.
+
+La gráfica *g* se construye por partes, primero la dispersión, segundo la curva de tendencia, tercero se agrega el título, para luego solo mostrar la gráfica *g*.
+
+```{r}
+
+g <- plot_ly(data = datos.entrenamiento, 
+             x = ~Overall, 
+             y = ~Valor, 
+             name = 'Dispersión',
+             type = 'scatter', 
+             mode = 'markers', 
+             color = I('blue')) 
+g <- g %>% add_trace(x = ~Overall,
+                     y = ~modelo.poly5$fitted.values, name = 'Tendencia', mode = 'lines+markers', color = I('red'))
+g <- g %>%
+layout(title = 'Jugadores FIFA. Dispersión y Tendencia de Overall y Valor económico.')
+g
+```
+
+#### Predicciones
+
+Con los datos de validación, se hacen predicciones con la función *predict().*
+
+Se hace un *data.frame* de comparaciones con lo cual se presentan los valores reales y los valores de las predicciones. Se presenta solo las primeras 20 y últimas 20 predicciones.
+
+```{r}
+predicciones <- predict(object = modelo.poly5, newdata = datos.validacion)
+
+comparaciones <- data.frame(Overall = datos.validacion$Overall, Valor = datos.validacion$Valor, predicccion = predicciones)
+ 
+
+
+
+```
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+
+```
+
+```{r}
+  kable(x = tail(comparaciones, 20), caption = "Predicciones")
+```
+
+#### Determinando métricas
+
+```{r}
+res.modelo.poly5 <- summary(modelo.poly5)
+res.modelo.poly5
+
+```
+
+El coeficiente de interseción 'a' y la pendiente 'b' si son estadísticamente significativas por encima del 95%
+
+El valor de R Square **SI** sobrepasa el 50% por lo que **SI SE ACEPTA** el modelo
+
+### Determinando rmse()
+
+El valor de rmse se interpreta en que tanto se desvía una predicción media sobre los valore reales.
+
+```{r}
+rmse.poly5 <- rmse(actual =comparaciones$Valor, predicted = comparaciones$predicccion)
+rmse.poly5
+
+
+```
+
+El valor de rmse en el modelo de regresión lineal simple **SI** está por debajo de los 2,000,000 (dos millones) que se establecieron como métrica aceptable, por lo que este modelo **SI SE ACEPTA**.
+
+# Interpretación
+
+Pendiente ...
+
+# Bibliografía
