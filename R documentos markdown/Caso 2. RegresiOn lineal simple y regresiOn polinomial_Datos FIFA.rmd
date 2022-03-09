@@ -417,7 +417,7 @@ El valor de rmse en el modelo de regresión lineal simple no está por debajo de
 Se usa el argumento *poly "poly(Overall, 5)"* en la construcción del modelo para indicar que es polinomial de segunda potencia.
 
 $$
-y = β0 + β1{x_i} +β2{x_i}2+β3{x_i}3…+βd{x_i}^n+ϵi
+y = β0 + β1{x_i} +β2{x_i}^2+β3{x_i}^3…+βd{x_i}^n+ϵi
 $$
 
 y = β0 + β1{x_i} +β2{x_i}^2+β3{x_i}^3...+βd{x_i}\^n+ϵi
