@@ -7,7 +7,7 @@ output: html_document
 
 
 # Cargar librerías
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(readr) # Para importar datos
 library(dplyr) # Para filtrar   
 library(knitr) # Para datos tabulares
@@ -34,3 +34,7 @@ modelo.rm
 summary(modelo.rm)
 ```
 
+
+# Referencias bibligráficas
+
+https://yuasaavedraco.github.io/Docs/Regresi%C3%B3n_Lineal_M%C3%BAltiple_con_Python.html
