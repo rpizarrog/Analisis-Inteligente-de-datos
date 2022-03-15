@@ -1,0 +1,51 @@
+---
+title: "Caso 3. Regresión Lineal Múltiple de ventas por invesión en publicidad. Adverstising"
+author: "Rubén Pizarro Gurrola"
+date: "15/3/2022"
+output: html_document
+---
+
+# Objetivo
+
+Construir y evaluar un modelo de regresión lineal múltiple para realizar predicciones.
+
+# Decripción
+
+La métrica va a ser : 
+* R Square ajustado
+* rmse
+
+
+# Marco teórico
+
+# Desarrollo
+
+## Cargar librerías
+```{r message=FALSE, warning=FALSE}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+```
+
+## Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising.csv")
+```
+
+La variable dependiente o variable objetivo es Sales que deberá estar en función de la inversión que se hace en TV, Radio o Newspaper.
+
+### head(datos)
+```{r}
+kable(head(datos, 20), caption = "Primeros 20 registros")
+```
+
+
+### tail(datos)
+```{r}
+kable(tail(datos, 20), caption = "Últimos 20 registros")
+```
+
