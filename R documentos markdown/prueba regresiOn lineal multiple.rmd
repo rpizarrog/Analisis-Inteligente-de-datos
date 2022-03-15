@@ -1,0 +1,36 @@
+---
+title: "prueba de regresión lienal multiple"
+author: "Rubén Pizarro Gurrola"
+date: "15/3/2022"
+output: html_document
+---
+
+
+# Cargar librerías
+```{r}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+```
+
+
+# Cargar datos
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/fhernanb/Python-para-estadistica/master/03%20Regression/Regresi%C3%B3n%20lineal%20m%C3%BAltiple/softdrink.csv")
+```
+
+# Crear el modelo
+```{r}
+modelo.rm <- lm(data = datos, formula = y ~ x1 + x2)
+modelo.rm
+```
+
+# summary modelo
+```{r}
+summary(modelo.rm)
+```
+
