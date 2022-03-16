@@ -36,13 +36,15 @@ Las métricas a valorar serán:
 
 En la mayoría de los problemas de investigación en los que se aplica el análisis de regresión se necesita más de una variable independiente para el modelo de regresión. La complejidad de la mayoría de mecanismos científicos es tal que, con el fin de predecir una respuesta importante, se requiere un modelo de regresión múltiple. Cuando un modelo es lineal en los coeficientes se denomina modelo de regresión lineal múltiple.
 
-Para el caso de k variables independientes, el modelo que da $x_1, x_2,..., x_k$, y $y$ como la variable dependiente.$x_1, x_,..., x_k$ son las variable s que afectan a la variable dependiente en el modelo de regresión lineal múltiple. [\@walpole_probabilidad_2012]
+Para el caso de k variables independientes, el modelo que da $x_1, x_2,..., x_k$, y $y$ como la variable dependiente.$x_1, x_,..., x_k$ son las variable s que afectan a la variable dependiente en el modelo de regresión lineal múltiple. [@walpole2012a]
 
-Muchos problemas de de investigación y de la industria, requieren la estimación de las relaciones existentes entre el patrón de variabilidad de una variable aleatoria y los valores de una o más variables aleatorias. [\@urrutia_mosquera_evaluacion_2011]
+Muchos problemas de de investigación y de la industria, requieren la estimación de las relaciones existentes entre el patrón de variabilidad de una variable aleatoria y los valores de una o más variables aleatorias. [@urrutiamosquera2011]
 
-Al generar un modelo de regresión linel múltiple es importante identificar los estadísticos de $R^2$, que se denomina coeficiente de determinación y es una medida de la proporción de la variabilidad explicada por el modelo ajustado.
+[\@urrutia_mosquera_evaluacion_2011]
 
-De igual forma, el valor de R2 ajustado o coeficiente de determinación ajustado, es una variación de R2 que proporciona un ajuste para los grados de libertad [\@walpole_probabilidad_2012]. R Ajustado está diseñado para proporcionar un estadístico que castigue un modelo sobreajustado, de manera que se puede esperar que favorezca al modelo.[\@walpole_probabilidad_2012].
+Al generar un modelo de regresión lineal múltiple es importante identificar los estadísticos de $R^2$, que se denomina coeficiente de determinación y es una medida de la proporción de la variabilidad explicada por el modelo ajustado.
+
+De igual forma, el valor de R2 ajustado o coeficiente de determinación ajustado, es una variación de R2 que proporciona un ajuste para los grados de libertad [@walpole_probabilidad_2012]. R Ajustado está diseñado para proporcionar un estadístico que castigue un modelo sobreajustado, de manera que se puede esperar que favorezca al modelo.[@walpole2012].
 
 Una variable $Y$ puede predecirse conforme y de cuerdo con
 
@@ -80,6 +82,15 @@ str(datos)
 Son 200 registros tres variables independientes y una variable dependiente.
 
 La variable dependiente o variable objetivo es *Sales* que deberá estar en función de la inversión que se hace en *TV*, *Radio* o *Newspaper*.
+
+## Limpir datos
+
+Quitar la variable x que no es de interés
+
+```{r}
+datos <- datos %>%
+  select (TV, Radio, Newspaper, Sales)
+```
 
 ### head(datos)
 
@@ -178,6 +189,39 @@ Con respecto a la métrica R Square y R Square ajustada, se tiene: Multiple R-sq
 Las predicciones de las ventas '*Sales*' matemáticamente serían: $$
 Sales = 2.620e00 + 4.809e-02\cdot{TV} + 1.873e-01\cdot{Radio} + 4.830e-06\cdot{Newspaper}
 $$
+
+Se hará predicciones con la función *predict()* utilizando para ello los datos de validación, luego se observará la diferencia que existe entre los datos reales con los datos de predichos determinando el *Root Mean Standar Error* (rmse), la raiz del error estándar medio es decir, la deferencia entre los valores predichos y los reales estadísticamente.
+
+Se hace un *data.frame* de comparaciones con lo cual se presentan los valores reales y los valores de las predicciones. Se presenta solo las primeras 20 y últimas 20 predicciones.
+
+```{r}
+predicciones <- predict(object = modelo.rm, newdata = datos.validacion)
+
+comparaciones <- data.frame(datos.validacion, predicciones)
+
+```
+
+### head()
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+
+```
+
+### tail()
+
+```{r}
+ kable(x = head(comparaciones, 20), caption = "Predicciones")
+```
+
+# Evaluando con métrica rmse
+
+```{r}
+rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$predicciones)
+rmse
+```
+
+El valor de *Root Mean Square Error* de `r rmse`, habrá que evaluarlo y compararlo con otro modelo para ver eficiencia de los modelos.
 
 # Interpretación
 
