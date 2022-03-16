@@ -83,7 +83,7 @@ Son 200 registros tres variables independientes y una variable dependiente.
 
 La variable dependiente o variable objetivo es *Sales* que deberá estar en función de la inversión que se hace en *TV*, *Radio* o *Newspaper*.
 
-## Limpir datos
+## Limpiar datos
 
 Quitar la variable x que no es de interés
 
@@ -201,6 +201,8 @@ comparaciones <- data.frame(datos.validacion, predicciones)
 
 ```
 
+
+
 ### head()
 
 ```{r}
@@ -213,6 +215,14 @@ comparaciones <- data.frame(datos.validacion, predicciones)
 ```{r}
  kable(x = head(comparaciones, 20), caption = "Predicciones")
 ```
+
+### Valores Reales Sales Vs Prediciones
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = 1:nrow(comparaciones), y = Sales), col='red') +
+  geom_line(aes(x = 1:nrow(comparaciones), y = predicciones), col='blue')
+```
+
 
 # Evaluando con métrica rmse
 
