@@ -156,3 +156,18 @@ kable(head(datos.validacion, 20), caption = "Datos de Validación Primeros 20 re
 kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 registros")
 ```
 
+## Consruir el modelo
+
+Se contruye el modelo con la funció rpart
+```{r}
+modelo_ar <- rpart(data = datos.entrenamiento,
+                    formula = Sales ~ TV,Radio,Newspaper )
+modelo_ar
+
+```
+
+### resumen del modelo
+```{r}
+summary(modelo_ar)
+```
+
