@@ -1,0 +1,158 @@
+---
+title: "Caso 4. Arbol de Regresión. Datos Advertising"
+author: "Rubén Pizarro Gurrola"
+date: "17/3/2022"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo 
+
+Construir y evaluar un modelo de árbol de regresión para realizar predicciones y comparar resultados con el modelo de regresión lineal múltiple
+
+# Descripción
+
+-   Se cargan las librerías necesarias
+
+-   Se cargan los datos Se exploran los datos
+
+-   Se crear los datos de entrenamiento y validación 70% y 30% respectivamente
+
+Las métricas a valorar serán:
+
+-   Que los coeficientes sean estadísticamente significativos por encima del 95%.
+
+-   *R Squared Ajustado* el modelo se acepta si sobrepasa en el 80%
+
+-   *rmse* comparado con otro modelo mismos datos se acepta o se establece que un modelo es mejor que otro.
+
+- Comparaciones con el modelo de regresión lineak múltiple
+
+
+# Marco teórico 
+
+Pendiente ... pendiente ...
+
+
+# Desarrollo 
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+
+library(rpart) # Para árbol
+library(rpart.plot) # Para árbol
+```
+
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising.csv")
+```
+
+## Explorando los datos
+
+```{r}
+summary(datos)
+str(datos)
+```
+
+Son 200 registros tres variables independientes y una variable dependiente.
+
+La variable dependiente o variable objetivo es *Sales* que deberá estar en función de la inversión que se hace en *TV*, *Radio* o *Newspaper*.
+
+## Limpiar datos
+
+Quitar la variable x que no es de interés
+
+```{r}
+datos <- datos %>%
+  select (TV, Radio, Newspaper, Sales)
+```
+
+### head(datos)
+
+```{r}
+kable(head(datos, 20), caption = "Primeros 20 registros")
+```
+
+### tail(datos)
+
+```{r}
+kable(tail(datos, 20), caption = "Últimos 20 registros")
+```
+
+## Datos de entrenamiento y validación
+
+### Datos de entrenamiento
+
+```{r}
+n <- nrow(datos)
+
+# Modificar la semilla estableciendo como parámetro los útimos cuatro dígitos de su no de control. 
+# Ej. set.seed(0732), o set.seed(1023)
+# set.seed(2022) 
+set.seed(2022)
+
+```
+
+De manera aleatoria se construyen los datos de entrenamiento y los datos de validación.
+
+En la variable *entrena* se generan los registros que van a ser los datos de entrenamiento, de tal forma que los datos de validación serán los que no sena de entrenamiento [-*entrena*].
+
+```{r}
+
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+#### head()
+
+```{r}
+kable(head(datos.entrenamiento, 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.entrenamiento, 20), caption = "Datos de entrenamiento ültimos 20 registros")
+```
+
+### Datos de validación
+
+Los datos de validación deben ser diferentes a los datos den entrenamiento.
+
+#### head()
+
+```{r}
+kable(head(datos.validacion, 20), caption = "Datos de Validación Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 registros")
+```
+
