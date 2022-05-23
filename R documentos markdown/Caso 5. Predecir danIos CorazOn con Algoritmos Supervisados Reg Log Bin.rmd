@@ -220,13 +220,13 @@ summary(modelo.rl)
 Entonces una posible predicción sería de la siguiente manera:
 
 $$
-Y=β_0+β_1⋅(coeficiente)+β_2⋅(coeficiente)+β_3⋅(coeficiente)+...+β_n⋅(coeficiente)Y=β_0+β_1⋅(coeficiente)+β_2⋅(coeficiente)+β_3⋅(coeficiente)+...+β_n⋅(coeficiente)
+Y=β_0+β_1⋅(coeficiente)+β_2⋅(coeficiente)+β_3⋅(coeficiente)+...+β_n⋅(coeficiente
 $$
 
 entonces ...
 
 $$
-HeartDisease_01 = -6.3411940 +BMI⋅(coeficiente) +SmokingYes\cdot(coeficiente) + ... + SkinCancerYes\cdot(coeficiente) 
+HeartDisease\text{01} = -6.3411940 +BMI⋅(coeficiente) +SmokingYes\cdot(coeficiente) + ... + SkinCancerYes\cdot(coeficiente) 
 $$
 
 ### Generar predicciones del modelo regresión logística
@@ -302,14 +302,14 @@ $$
 -   Especificity o especificidad (tasa de verdaderos negativos)
 
 $$
-especificity = \\frac{VP}{VN + FP}
+especificity = \frac{VP}{VN + FP}
 $$
 
 #### Construyendo la matriz de confusión del modelo de regresión logística
 
 Factorizar las columnas "HeartDisease_01" & "heartDiseasePred" de la tabla comparativa
 
-Factorizar en R ==\> categorizar con la funcion "as.factor" o "factor"
+Factorizar en R significa categorizar con la función "as.factor" o "factor"
 
 Se muestra a tabla con las columnas de interés para interpretar las predicciones.
 
@@ -344,21 +344,21 @@ Este valor de Accuracy = Exactitud deberá compararse contra otros modelos.
 Se crea un registro de una presona con ciertas condiciones de salud.
 
 ```{r}
-BMI <- 30
+BMI <- 38
 Smoking <- 'Yes'
 AlcoholDrinking = 'Yes'
-Stroke <- 'No'
-PhysicalHealth <- 13
-MentalHealth = 22
+Stroke <- 'Yes'
+PhysicalHealth <- 2
+MentalHealth = 5
 DiffWalking = 'Yes'
 Sex = 'Male'
-AgeCategory = '60-64'
-Race = 'Hispanic'
+AgeCategory = '70-74'
+Race = 'Black'
 Diabetic <- 'Yes'
 PhysicalActivity = "No"
 GenHealth = "Fair"
-SleepTime = 8
-Asthma = "No"
+SleepTime = 12
+Asthma = "Yes"
 KidneyDisease = "Yes"
 SkinCancer = 'No'
 
@@ -380,7 +380,7 @@ prediccion
 
 ```
 
-Este valor -0.6279663 significa a valor probabilístico?
+Este valor 0.06995949 a valor probabilístico:
 
 ```{r}
 prob <- exp(prediccion$fit) / (1 + exp(prediccion$fit))
@@ -388,7 +388,7 @@ prob
 
 ```
 
-Tiene un valor de 0.3681 es decir un 36.81%
+Tiene un valor de 0.7480466 es decir un 74.80%
 
 Entonces en predicción es:
 
@@ -398,7 +398,7 @@ pred
 
 ```
 
-Si la predicción es es 0 no tienen afección del corazón en caso se que hubiera resultado 1 entonces la predicción implicaría que si tendría daño del corazón.
+Si la predicción es es 0 no tienen afección del corazón en caso se contrario si el resultado es 1 entonces la predicción implica que si tiene daño del corazón.
 
 # Interpretación
 
