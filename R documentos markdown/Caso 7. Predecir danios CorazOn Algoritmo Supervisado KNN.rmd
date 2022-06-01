@@ -13,15 +13,13 @@ bibliography: referencias.bib
 
 # Objetivo
 
-Construir y evaluar un modelo KNN para resolver tarea de clasificación mediante la predicción de si una persona tiene daño de corazón o no.
+Construir y evaluar un modelo *KNN* para resolver tarea de clasificación mediante la predicción de si una persona tiene daño de corazón o no.
 
 # Descripción
 
-Cargar librerías, datos y hacer lo necesario aplicando función knn de la librería class y la función train.knn de la librería kknn.
+Cargar librerías, datos y hacer lo necesario aplicando función *knn* de la librería *class* y la función *train.knn* de la librería *kknn*.
 
-\# Descripción
-
-Se cargan librerías y se descargan los datos: <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/heart_2020_cleaned.csv>
+Se descargan los datos: <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/heart_2020_cleaned.csv>
 
 Los datos están relacionados con aspectos médicos y son valores numéricos de varias variables que caracterizan el estado de salud de 319,795 personas.
 
@@ -31,17 +29,17 @@ Se construyen datos de entrenamiento y validación al 80% y 20% cada uno.
 
 Se desarrollan los modelos de:
 
-\- Regresión Logística binaria
+-   Regresión Logística binaria
 
-\- Árbol de Clasificación tipo class
+-   Árbol de Clasificación tipo class
 
-\- **K Means**
+-   **K Means**
 
-\- SVM Lineal
+-   SVM Lineal
 
-\- SVM Polinomial
+-   SVM Polinomial
 
-\- SVM Radial
+-   SVM Radial
 
 Los modelo se aceptan si tienen un valor de exactitud por encima del 70%.
 
@@ -210,9 +208,13 @@ Se tiene una Accuracy = exactitud del 91.30%
 
 ## Mismo algoritmo pero con función knn
 
+### Limpiar los datos
+
+Este proceso es transformar variables
+
 Antes de utilizar este modelo debe convertirse los valores de las variables cualitativas tipo factor a variables numéricas. Primero las variable dicotómicas Yes, No a 1, 2.
 
-Smoking, AlcoholDrinking, Stroke, DiffWalking, Sex PhysicalActivity, Asthma, KidneyDisease, SkinCancer
+#### Smoking, AlcoholDrinking, Stroke, DiffWalking, Sex PhysicalActivity, Asthma, KidneyDisease, SkinCancer
 
 ```{r}
 datos2 <- datos %>%
@@ -221,7 +223,7 @@ datos2 <- datos %>%
 
 ```
 
-AgeCategory
+#### AgeCategory
 
 ```{r}
 datos2 <- datos2 %>%
@@ -229,7 +231,7 @@ datos2 <- datos2 %>%
 
 ```
 
-Race
+#### Race
 
 ```{r}
 datos2 <- datos2 %>%
@@ -237,18 +239,21 @@ datos2 <- datos2 %>%
 
 ```
 
-Diabetic
+#### Diabetic
 
 ```{r}
 datos2 <- datos2 %>%
   mutate(Diabetic = ifelse (Diabetic == 'Yes',  1, ifelse(Diabetic == 'No', 2, ifelse(Diabetic == 'No, borderline diabetes', 3, 4)))) 
 ```
 
-GenHealth
+#### GenHealth
+
 ```{r}
 datos2 <- datos2 %>%
   mutate(GenHealth = ifelse (Race == 'Fair',  1, ifelse(GenHealth == 'Poor', 2, ifelse(GenHealth == 'Good', 3, ifelse(GenHealth == 'Very good', 4, 5 )))))
 ```
+
+### Datos de entrenamiento y validación
 
 Nuevamente partir en datos de entrenamiento y validación per ahora con los datos2
 
@@ -267,11 +272,12 @@ datos.validacion <- datos2[-entrena, ]
 ```
 
 Nuevamente una muestra de los datos de entrenamento.
+
 ```{r}
 muestra <- sample(x = 1:nrow(datos.entrenamiento), size = 10000, replace = FALSE)
 ```
 
-
+### Construir el modelo knn
 
 Se utiliza la función *knn* de la librería *class* para estimar predicciones. Se utiliza la variable predicciones.2 para diferencias de predicciones.
 
@@ -279,6 +285,8 @@ Se utiliza la función *knn* de la librería *class* para estimar predicciones. 
 predicciones.2 <- knn(train = datos.entrenamiento[muestra, -1], test = datos.validacion[, -1], cl = datos.entrenamiento[muestra,1], k = 12)
 
 ```
+
+### Matriz de confusión
 
 Determinando la matriz de confusión con predicciones.2
 
@@ -297,7 +305,7 @@ Siendo el mismo algoritmo las funciones mismas arrojan diferentes estadísticos.
 
 Se puede comparar contra otros modelos:
 
-# Interpretración 
+# Interpretración
 
 Pendiente ....
 
