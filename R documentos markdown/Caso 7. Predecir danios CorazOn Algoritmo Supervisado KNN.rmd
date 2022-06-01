@@ -15,6 +15,14 @@ bibliography: referencias.bib
 
 Construir y evaluar un modelo *KNN* para resolver tarea de clasificación mediante la predicción de si una persona tiene daño de corazón o no.
 
+# Fundamento Teórico
+
+El método **K-NN** es un método importantes de clasificación supervisada. En el proceso de aprendizaje no se hace ninguna suposición acerca de la distribución de las variables predictoras, es por ello que es un método de clasificación no paramétrico, que estima el valor de la función de densidad de probabilidad o directamente la probabilidad posterior de que un elemento $x$ pertenezca a la clase $C_j$ a partir de la información proporcionada por el conjunto de entrenamiento.
+
+Es un método bastante sencillo y robusto que simplemente busca en las observaciones más cercanas a la que se está tratando de predecir y clasifica el punto de interés basado en la mayoría de datos que le rodean.
+
+Es un algoritmo muy simple de implementar y de entrenar, pero tienen una carga computacional elevada y **no es apropiado cuando se tienen muchos grados de libertad.** [@villalba2018]
+
 # Descripción
 
 Cargar librerías, datos y hacer lo necesario aplicando función *knn* de la librería *class* y la función *train.knn* de la librería *kknn*.
@@ -214,6 +222,8 @@ Este proceso es transformar variables
 
 Antes de utilizar este modelo debe convertirse los valores de las variables cualitativas tipo factor a variables numéricas. Primero las variable dicotómicas Yes, No a 1, 2.
 
+Se construye un *data.frame* similar pero llamado *datos2* con variables numéricas en lugar de factores; esto se hace para el modelo se construya con la función *knn()*.
+
 #### Smoking, AlcoholDrinking, Stroke, DiffWalking, Sex PhysicalActivity, Asthma, KidneyDisease, SkinCancer
 
 ```{r}
@@ -279,9 +289,13 @@ muestra <- sample(x = 1:nrow(datos.entrenamiento), size = 10000, replace = FALSE
 
 ### Construir el modelo knn
 
-Se utiliza la función *knn* de la librería *class* para estimar predicciones. Se utiliza la variable predicciones.2 para diferencias de predicciones.
+Se utiliza la función *knn* de la librería *class* para estimar predicciones. Se utiliza la variable predicciones.2 para diferenciar de la variable predicciones.
+
+Se utiliza una muestra de 10000 mil registros de los datos de entrenamiento porque el modelo se tarda bastante tiempo en construirse si se utilian todos los registros de los datos de entrenamiento.
 
 ```{r}
+# predicciones.2 <- knn(train = datos.entrenamiento[, -1], test = datos.validacion[, -1], cl = datos.entrenamiento[,1], k = 12)
+
 predicciones.2 <- knn(train = datos.entrenamiento[muestra, -1], test = datos.validacion[, -1], cl = datos.entrenamiento[muestra,1], k = 12)
 
 ```
