@@ -1,0 +1,466 @@
+---
+title: "Caso Especial. Comparar modelo regresión lineal simple VS Polinomial con Python. Datos Advertising"
+author: "Rubén Pizarro Gurrola"
+date: '2022-09-21'
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Evaluar y comparar los modelos de regresión lineal simple y polinomial de segunda y quinta potencia con datos de Adverstising_WEB.csv y programación Python.
+
+# Descripción
+
+Se cargan los datos de la dirección:<https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv>
+
+Los datos contienen variables que en el contexto se interpreta que son inversiones hechas de una empresa y las ventas de la misma, a tanta inversión de marketing en medios tales como TV, Radio, *NewsPapers* (medios impresos) y *Web* (digital) existe en relacuón a las ventas (*Sales*) generadas.
+
+Se trata de comparar modelos predictivos para evaluar cuál es mejor con respecto a los estadísticos *R Square* y *RMSE*.
+
+Las variables de interés serán:
+
+-   **TV** como variable independiente o la variable explicativa hacia la variables *Sales*
+
+-   **Sales** como variable dependiente que es la variable a predecir.
+
+-   Se construyen datos de entrenamiento y datos de validacion al 70 y 30% respectivamente
+
+Se construyen el modelo de regresión lineal simple con los datos de entrenamiento y se evaluán los siguiente aspectos:
+
+-   Se identifican los coeficientes a y b
+
+-   Se analizan los niveles de confianza de los coeficientes.
+
+-   Se identifica el valor de *R Square* par evaluar el grado de explicación de la variable dependiente con respecto a la variable independiente. El modelo **se acepta si está por encima del 60%.**
+
+-   Se hacen prediciones con la funcion *predict()* con los datos de validación.
+
+-   Se mide el valor de *RMSE Root Mean Stándar Error.*
+
+Se construye el modelo polinomial a la segunda potencia y quinta potencia con los datos de entrenamiento y se evalúan los siguientes aspectos.
+
+-   Se identifican los coeficientes
+
+-   Se analizan los niveles de confianza de los coeficientes.
+
+-   Se identifica el valor de *R Square* para evaluar el grado de explicación de la variable independiente con respecto a la variable dependiente. **Se acepta si está por encima del 60%**
+
+-   Se hacen predicciones con la función *predict()* con los datos de validación.
+
+-   Se mide el valor de *rmse Root Mean Stándar Error.*
+
+-   Para trabajar con código Python, se deben cargan las librerías de *Python* previamente instaladas con la función *py_install()* de la librería *reticulate* de R. La función *repl_python()* se utiliza para ejecutar ventana de comando o *shell* de *Python.*
+
+-   *py_install(packages = "pandas")*
+
+-   *py_install(packages = "matplotlib")*
+
+-   py_install(packages = "numpy")
+
+-   py_install(packages = "sklearn")
+
+# Desarrollo
+
+## Cargar librerías
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures # Polinomial
+
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import mean_squared_error, r2_score
+```
+
+## Cargar datos
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv", encoding='latin1')
+
+```
+
+Observar los primeros diez registros
+
+```{python}
+datos.head(10)
+```
+
+## Describir datos
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+### Variable independiente y dependiente
+
+Se identifican dos variables numéricas de interés:
+
+***TV***: Inversión de publicidad a través de televisión
+
+***Sales***: Ventas de la empresa.
+
+Se define a la variable independiente como *TV* y la variable dependiente Sales, es decir, *TV* impacta sobre *Sales* o los valores de inversión de la variable Sales dependen de *TV*.
+
+```{python}
+datos['TV'].describe()
+```
+
+```{python}
+datos['Sales'].describe()
+```
+
+### Visualizar la dispersión de los datos
+
+```{python}
+plt.plot(datos['TV'], datos['Sales'], 'o', color= 'blue')
+```
+
+Se observa que la relación entre las dos variables no es del todo lineal.
+
+## Construir Datos de entrenamiento y validación
+
+Los datos de entrenamiento son el 70% de los datos originales y los de validación el 30%.
+
+Se siembra una semilla del año en curso 2022 para generar los mismos valores cada vez que se cnstruya el documento \*markdown\*.
+
+Determinas las variables de interés en variables específicas en Python.
+
+```{python}
+TV = datos[['TV']].to_numpy()
+Sales = datos[['Sales']].to_numpy()
+```
+
+Se utiliza el método *train_test_split()* que forma parte de la librería Scikit-Learn.
+
+El argumento test_size establece el 30% para datos de validación por lo que el 70% pertenece a los datos de entrenamiento.
+
+Se siembra la semilla 2022 para la generación de valores aleatorios.
+
+```{python}
+TV_train, TV_test, Sales_train, Sales_test = train_test_split(TV, Sales, test_size=0.3, random_state=2022)
+```
+
+Ver los registros (cuántos) de cada conjunto de la variable TV.
+
+```{python}
+TV_train.shape
+TV_test.shape
+```
+
+Ver los primeros 10 registros de cada conjunto de datos de la variable TV.
+
+```{python}
+TV_train[1:10]
+TV_test[1:10]
+```
+
+No deben ser los mismos... ...
+
+## Modelo de regresión lineal simple
+
+Se construye un modelo lineal con la función *LinearRegression*() y los valores ajustados con la función *fit*() del modelo construido.
+
+La variable dependiente *Sales* está en función de la variable independiente *TV* de los datos de entrenamiento (train)
+
+```{python}
+modelo_ls = LinearRegression()
+modelo_ls.fit(TV_train, Sales_train)
+```
+
+### El valor de los coeficientes a y b
+
+$$
+Y  = a + b \cdot x_i \\\therefore\\Y = 7.35825513 + 0.04520679 \cdot TV_i 
+$$
+
+```{python}
+a = modelo_ls.intercept_
+b = modelo_ls.coef_
+
+print("Valor de a: ", a)
+print("Valor de b; ", b)
+```
+
+### Estimación lineal
+
+```{python}
+linea_tendencia = modelo_ls.predict(TV_train)
+plt.plot(TV_train, Sales_train, 'o', color= 'blue')
+plt.plot(TV_train, linea_tendencia, color="red")
+```
+
+### Predicciones del modelo
+
+Las predicciones se hacen con el conjunto de datos de validación. Se muestran sólo los primeros diez valores de TV y las predicciones.
+
+```{python}
+TV_train[1:10]
+predicciones = modelo_ls.predict(TV_test)
+predicciones[1:10]
+```
+
+Se construye una tabla comparativa con los datos de validación y las predicciones generadas para comparar y generar el estadístico *rmse*.
+
+Crear un data.frame llamado comparaciones a partir de la creación de un diccionario con los valores reales del conjunto de validación y las predicciones calculadas.
+
+Con la función flatten().tolist() convierte el arreglo a una lista de una dimensión.
+
+```{python}
+diccionario = {'TV': TV_test.flatten().tolist(),
+                'Real' : Sales_test.flatten().tolist(), 
+               'Predicho' : predicciones.flatten().tolist()}
+diccionario
+
+comparaciones = pd.DataFrame(diccionario)
+comparaciones
+```
+
+### Valor de R Square
+
+Es el valor de la correlación al cuadrado de las predicciones y los valores reales.Se interpreta como la representación que tienen la variable independiente sobre la variable dependiente. En este caso, que tanto *TV* representa a *Sales* en los datos.
+
+R2 es el coeficiente de determinación, y tiene que ver con la capacidad de un modelo para predecir futuros resultados.
+
+```{python}
+# Con lo real vs predicciones
+r = np.corrcoef(comparaciones['Real'], comparaciones['Predicho'])
+r = r ** 2
+r = r.reshape(-1,2)
+r = r[0, 1]
+print('R Square :', np.round(r, 4) )
+
+# con r2_score([2, 5, 9], [3, 5, 11])
+print('R Square :', r2_score(comparaciones['Real'], comparaciones['Predicho'] ))
+```
+
+El valor de *R Square* está por encima del 60% por lo que el modelo se acepta.
+
+### Evaluar predicciones con rmse
+
+Se determina la variación de los valores reales contra las predicciones por medio del estadístico *rmse (Root Mean Stándar Error)* que servirá para compararse con otro modelo concluyendo que en el que tenga menor error es mas eficiente el modelo.
+
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Sales_test, predicciones))
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+
+
+```
+
+El valor de **3.1133** habrá que compararlo con otro modelo.
+
+Construir un arreglo para ir guardando los valores de *rmse* y compararlos al final.
+
+```{python}
+rmse = []
+rmse.append(np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+
+rmse
+
+```
+
+------------------------------------------------------------------------
+
+## Modelo de regresión polinomial de segundo nivel
+
+Desde Sklearn con PolynomialFeatures, se crea un objeto polinómico de segundo nivel. Se crea otro objeto de X_poly a partir de los datos de entrenamiento y finalmente se cra el modelo polinómico de segundo nivel.
+
+Se carga la librería necesaria y se utiliza la variable *TV* de los datos de entrenamiento.
+
+```{python}
+from sklearn.preprocessing import PolynomialFeatures
+
+poly_reg =  PolynomialFeatures(degree = 2)
+
+TV_poly = poly_reg.fit_transform(TV_train)
+
+modelo_poly2 = LinearRegression()
+modelo_poly2.fit(TV_poly, Sales_train)
+```
+
+$$
+Y = \beta0 + \beta_1\cdot x_i+\beta_2\cdot x_i^2 + … \beta_n \cdot x_i^n
+$$
+
+### Curva de tendencia
+
+```{python}
+curva_tendencia = modelo_poly2.predict(poly_reg.fit_transform(TV_train))
+plt.scatter(TV_train, Sales_train, color = 'b', )
+plt.scatter(TV_train, curva_tendencia, color='r', linestyle = 'solid')
+plt.show()
+```
+
+### Predicciones del modelo
+
+Se utiliza la variable TV con los datos de validación
+
+```{python}
+predicciones = modelo_poly2.predict(poly_reg.fit_transform(TV_test))
+predicciones
+```
+
+Se construye tabla de comparaciones para determinar R *Square* y *rmse*
+
+```{python}
+diccionario = {'TV': TV_test.flatten().tolist(),
+                'Real' : Sales_test.flatten().tolist(), 
+               'Predicho' : predicciones.flatten().tolist()}
+diccionario
+
+comparaciones = pd.DataFrame(diccionario)
+comparaciones.head(10)
+```
+
+### Valor de R Square
+
+```{python}
+# Con lo real vs predicciones
+r = np.corrcoef(comparaciones['Real'], comparaciones['Predicho'])
+r = r ** 2
+r = r.reshape(-1,2)
+r = r[0, 1]
+print('R Square :', np.round(r, 4) )
+
+# con r2_score([2, 5, 9], [3, 5, 11])
+print('R Square :', r2_score(comparaciones['Real'], comparaciones['Predicho'] ))
+
+```
+
+El valor de *R Square* está por encima del 60% por lo que se acepta el modelo conforme a lo establecido al principio del caso.
+
+### Evaluar predicciones con rmse
+
+Con la tabla de comparaciones se determina rmse.
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Sales_test, predicciones))
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+```
+
+Agregar el valor de la métrica *rmse* al arreglo *rmse[]* creado anteriormente.
+
+```{python}
+rmse.append(np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+
+rmse
+
+```
+
+------------------------------------------------------------------------
+
+## Modelo de regresión polinomial de quinto nivel
+
+Desde Sklearn con PolynomialFeatures, se crea un objeto polinómico de segundo nivel. Se crea otro objeto de X_poly a partir de los datos de entrenamiento y finalmente se crea el modelo polinómico de quinto nivel.
+
+Se carga la librería necesaria y se utiliza la variable *TV* de los datos de entrenamiento.
+
+```{python}
+from sklearn.preprocessing import PolynomialFeatures
+
+poly_reg =  PolynomialFeatures(degree = 5)
+
+TV_poly = poly_reg.fit_transform(TV_train)
+
+modelo_poly5 = LinearRegression()
+modelo_poly5.fit(TV_poly, Sales_train)
+```
+
+$$
+Y = \beta0 + \beta_1\cdot x_i+\beta_2\cdot x_i^2 + \beta_3\cdot x_i^3 +\beta_4\cdot x_i^4 +\beta_5\cdot x_i^5
+$$
+
+### Curva de tendencia
+
+```{python}
+curva_tendencia = modelo_poly5.predict(poly_reg.fit_transform(TV_train))
+plt.scatter(TV_train, Sales_train, color = 'b', )
+plt.scatter(TV_train, curva_tendencia, color='r', linestyle = 'solid')
+plt.show()
+```
+
+### Predicciones del modelo
+
+Se utiliza la variable TV con los datos de validación
+
+```{python}
+predicciones = modelo_poly5.predict(poly_reg.fit_transform(TV_test))
+predicciones
+```
+
+Se construye tabla de comparaciones para determinar R *Square* y *rmse*
+
+```{python}
+diccionario = {'TV': TV_test.flatten().tolist(),
+                'Real' : Sales_test.flatten().tolist(), 
+               'Predicho' : predicciones.flatten().tolist()}
+diccionario
+
+comparaciones = pd.DataFrame(diccionario)
+comparaciones.head(10)
+```
+
+### Valor de R Square
+
+```{python}
+# Con lo real vs predicciones
+r = np.corrcoef(comparaciones['Real'], comparaciones['Predicho'])
+r = r ** 2
+r = r.reshape(-1,2)
+r = r[0, 1]
+print('R Square :', np.round(r, 4) )
+
+# con r2_score([2, 5, 9], [3, 5, 11])
+print('R Square :', r2_score(comparaciones['Real'], comparaciones['Predicho'] ))
+
+```
+
+El valor de *R Square* está por encima del 60% por lo que se acepta el modelo conforme a lo establecido al principio del caso.
+
+### Evaluar predicciones con rmse
+
+Con la tabla de comparaciones se determina rmse.
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Sales_test, predicciones))
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+```
+
+Agregar el valor de la métrica *rmse* al arreglo *rmse[]* creado anteriormente.
+
+```{python}
+rmse.append(np.sqrt(metrics.mean_squared_error(Sales_test, predicciones)))
+
+rmse
+
+```
+
+# Interpretación
+
+```{python}
+rmse
+```
+
+De acuerdo al valor de la métrica *rmse* el modelo que resultó con menor variación en las predicciones es el modelo de regresión lineal simple para este conjunto de datos y con estas variables de *TV* como independiente y *Sales* como dependiente.
