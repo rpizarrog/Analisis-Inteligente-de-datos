@@ -1,0 +1,484 @@
+---
+title: "Caso Especial Comparar Regresión Lineal Simple VS Regresión Polinomial con datos de Advertising"
+author: "Rubén Pizarro Gurrola"
+date: '2022-09-20'
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Evaluar y comparar los modelos de regresión lineal simple y polinomial de segunda y quinta pontecia con datos de Adverstising_WEB.csv
+
+# Descripción
+
+Se cargan los datos de la dirección:<https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv>
+
+Los datos contienen variables que en el contexto se interpreta que son inversiones hechas de una empresa y las ventas de la misma, a tanta inversión de marketing en medios tales como TV, Radio, *NewsPapers* (medios impresos) y *Web* (digital) existe en relacuón a las ventas (*Sales*) generadas.
+
+Se trata de comparar modelos predictivos para evaluar cuál es mejor con respecto a los estadísticos *R Square* y *RMSE*.
+
+Las variables de interés serán:
+
+-   **TV** como variable independiente o la variable explicativa hacia la variables *Sales*
+
+-   **Sales** como variable dependiente que es la variable a predecir.
+
+-   Se construyen datos de entrenamiento y datos de validacion al 70 y 30% respectivamente
+
+Se construyen el modelo de regresión lineal simple con los datos de entrenamiento y se evaluán los siguiente aspectos:
+
+-   Se identifican los coeficientes a y b
+
+-   Se analizan los niveles de confianza de los coeficientes.
+
+-   Se identifica el valor de *R Square* par evaluar el grado de explicación de la variable dependiente con respecto a la variable independiente. El modelo **se acepta si está por encima del 60%.**
+
+-   Se hacen prediciones con la funcion *predict()* con los datos de validación.
+
+-   Se mide el valor de *RMSE Root Mean Stándar Error.*
+
+Se construye el modelo polinomial a la segunda potencia y quinta potencia con los datos de entrenamiento y se evalúan los siguientes aspectos.
+
+-   Se identifican los coeficientes
+
+-   Se analizan los niveles de confianza de los coeficientes.
+
+-   Se identifica el valor de *R Square* para evaluar el grado de explicación de la variable independiente con respecto a la variable dependiente. **Se acepta si está por encima del 60%**
+
+-   Se hacen prediciones con la funcion *predict()* con los datos de validación.
+
+-   Se mide el valor de *rmse Root Mean Stándar Error.*
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr)   # Sirve para importar datos
+library(Metrics) # Sirve para construir métricas y valorar modelos 
+library (ggplot2) # Sirve para gráficos
+library(caret)    # Para partir los datos Entrenamiento y Validación.
+library(knitr)
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+```
+
+## Describir datos
+
+```{r}
+summary(datos)
+```
+
+```{r}
+str(datos)
+
+```
+
+### Visualizar la dispersión de los datos
+
+```{r warning=FALSE, message=FALSE}
+ggplot(datos, aes(x = TV, y = Sales)) + 
+  geom_point(colour = "blue") + 
+  geom_smooth(colour = 'orange', method = lm) +
+  geom_smooth(colour = 'red') 
+
+
+```
+
+Se observa que la relación entre las dos variables no es del todo lineal.
+
+## Construir Datos de entrenamiento y validación
+
+Los datos de entrenamiento son el 70% de los datos originales y los de validación el 30%.
+
+Se siembra una semilla del año en curso 2022 para generar los mismos valores cada vez que se cnstruya el documento *markdown*.
+
+```{r}
+set.seed(2022)
+```
+
+Los datos se particionan usando la función *createDataPartition()* al 70 % el resultado es vector con los registros que pertenecen a datos de entrenamiento de los datos originales.
+
+-   *datos[entrena, ]*, son los datos de entrenamiento y
+
+-   *datos[- entrena, ]* son los datos de validación.
+
+```{r}
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+### Datos de entrenamiento 70%
+
+Se despliegan los primeros diez registros de los datos de entrenamiento y no deben aparecer en los datos de validación deben ser diferentes unos con otros.
+
+```{r}
+head(datos.entrenamiento, 10)
+paste("Número de observaciones en datos de entrenamiento ", nrow(datos.entrenamiento))
+```
+
+### Datos de validación 30%
+
+Se despliegan los primeros diez registros y no deben estar en los datos de entrenamiento
+
+```{r}
+head(datos.validacion, 10)
+paste("Número de observaciones en datos de entrenamiento ", nrow(datos.validacion))
+```
+
+## Modelo de regresión lineal simple
+
+La variable dependiente *Sales* está en función de la variable independiente *TV* y se designa con el argumento *Formula = Sales \~ TV* de los datos (*data*) de entrenamiento.
+
+```{r}
+modelo.simple <- lm(data = datos.entrenamiento, formula = Sales ~ TV)
+
+```
+
+### Resumen del modelo
+
+Generando el resumen del modelo
+
+```{r}
+resumen <- summary(modelo.simple)
+resumen
+```
+
+### El valor de los coeficientes a y b
+
+```{r}
+a <- modelo.simple$coefficients[1]
+b <- modelo.simple$coefficients[2]
+a; b
+```
+
+Los coeficientes tienen un nivel de confianza a 99% ('\*\*\*') por lo que el modelo tiene buenos predictores o al 99% de confianza.
+
+### Valor de R Square
+
+El valor de *Multiple R-squared* es de 0.6466 o del 64.66% por lo que **SI SE ACEPTA EL MODELO** por encima del **60%** como inicialmente se estableció como meta.
+
+```{r}
+resumen$r.squared
+```
+
+### Predicciones del modelo
+
+Con la función *predict()* se generan predicciones de los datos de validación.
+
+Las predicciones estarán en función de la fórmula y de los valores de los coeficentes a y b:
+
+$$
+Y  = a + b \cdot x_i \\
+\therefore\\
+Y = 6.801923 + 0.05013817 \cdot TV_i 
+$$
+
+```{r}
+predicciones <- predict(object = modelo.simple, newdata = datos.validacion)
+
+```
+
+#### Estimación lineal
+
+```{r}
+ggplot(data = datos.entrenamiento, aes(x = TV, y = Sales)) + 
+  geom_point(colour = "blue") + 
+  geom_line(aes(x = TV, y = modelo.simple$fitted.values, colour = 'red'))
+```
+
+#### Generar tabla comparativa
+
+Se construye una tabla comparativa con los datos de validación y las predicciones generadas para comparar y generar el estadístico *rmse*.
+
+```{r}
+tabla <- data.frame(TV = datos.validacion$TV, Sales.real = datos.validacion$Sales, Sales.predicciones = predicciones)
+tabla
+```
+
+#### Evaluar predicciones con *rmse*
+
+Se determina la variación de los valores reales contra las predicciones por medio del estadístico *rmse (Root Mean Stándar Error)* que servirá para compararse con otro modelo concluyendo que en el que tenga menor error es mas eficiente el modelo.
+
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+Se obtiene la métrica con la función *rmse*() de la librería *Metrics* previamente argada.
+
+```{r}
+rmse.lineal <- rmse(actual = tabla$Sales.real, predicted = tabla$Sales.predicciones)
+rmse.lineal
+```
+
+El valor de *rmse* es de: `r rmse.lineal` y habrá que compararse con otro modelo que se haya construído con los mismos datos y las mismas variables, ejemplo modelos de regresión polinomial.
+
+------------------------------------------------------------------------
+
+## Modelo de regresión polinomial de segundo nivel
+
+La variable dependiente *Sales* está en función de la variable independiente *TV* y se designa con el argumento *Formula = Sales \~ TV* de los datos (*data*) de entrenamiento pero en función de elevar al cuadrado el valor del coeficiente TV.
+
+$$
+Y = \beta0 + \beta_1\cdot x_i+\beta_2\cdot x_i^2 + ... \beta_n \cdot x_i^n
+$$
+
+### Usando argumento Poly
+
+```{r}
+
+modelo.poly2 <- lm(data = datos.entrenamiento, formula = Sales ~ poly(x = TV, degree = 2, raw = TRUE))
+
+
+```
+
+### Usando argumento I
+
+```{r}
+modelo.poly2.I <- lm(Sales ~ TV + I(x = TV ^ 2), data = datos.entrenamiento)
+```
+
+### Resumen del modelo
+
+Generando el resumen del modelo
+
+```{r}
+resumen <- summary(modelo.poly2)
+resumen
+```
+
+Los coeficientes tienen un nivel de confianza a 99% ('\*\*\*') excepto el predictor b2 que tienen un nivel de confianza por debajo del 90%. Sin embargo se aceptan los predictores.
+
+### El valor de los coeficientes con modelo Poly
+
+```{r}
+b0 <- modelo.poly2$coefficients[1]
+b1 <- modelo.poly2$coefficients[2]
+b2 <- modelo.poly2$coefficients[3]
+b0; b1; b2
+
+```
+
+### Coeficientes con el modelo I
+
+```{r}
+bI0 <- modelo.poly2$coefficients[1]
+bI1 <- modelo.poly2$coefficients[2]
+bI2 <- modelo.poly2$coefficients[3]
+bI0; bI1; bI2
+```
+
+Deben ser los mismos valores.
+
+### Valor de R Square
+
+El valor de *Multiple R-squared* es de 0.6299282 o del 62.99% por lo que **SI SE ACEPTA EL MODELO** por encima del **60%** como inicialmente se estableció como meta.
+
+```{r}
+resumen$r.squared
+```
+
+### Predicciones del modelo
+
+Con la función *predict()* se generan predicciones de los datos de validación.
+
+Las predicciones estarán en función de la fórmula y de los valores de los coeficentes a y b:
+
+$$
+Y = \beta0 + \beta_1\cdot x+\beta_2\cdot x^2 + ... \beta_n \cdot x^n \\
+\therefore
+Y = 6.108493 +  0.06526148  \cdot TV_i + -5.309162e-05 \cdot TV_i^2
+$$
+
+```{r}
+predicciones <- predict(object = modelo.poly2, newdata = datos.validacion)
+
+```
+
+#### Curva de estimación
+
+```{r}
+ggplot(data = datos.entrenamiento, aes(x = TV, y = Sales)) + 
+  geom_point(colour = "blue") + 
+  geom_line(aes(x = TV, y = modelo.poly2$fitted.values, colour = 'red'))
+```
+
+#### Generar tabla comparativa
+
+Se construye una tabla comparativa con los datos de validación y las predicciones generadas para comparar y generar el estadístico *rmse*.
+
+```{r}
+tabla <- data.frame(TV = datos.validacion$TV, Sales.real = datos.validacion$Sales, Sales.predicciones = predicciones)
+tabla
+```
+
+#### Evaluar predicciones con *rmse*
+
+Se determina la variación de los valores reales contra las predicciones por medio del estadístico *rmse (Root Mean Stándar Error)* que servirá para compararse con otro modelo concluyendo que en el que tenga menor error es mas eficiente el modelo.
+
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+Se obtiene la métrica con la función *rmse*() de la librería *Metrics* previamente argada.
+
+```{r}
+rmse.poly2 <- rmse(actual = tabla$Sales.real, predicted = tabla$Sales.predicciones)
+rmse.poly2
+```
+
+El valor de *rmse* es de: `r rmse.poly2` y habrá que compararse con otro modelo que se haya construido con los mismos datos y las mismas variables, ejemplo modelos de regresión polinomial.
+
+------------------------------------------------------------------------
+
+## Modelo de regresión polinomial de quinto nivel
+
+La variable dependiente *Sales* está en función de la variable independiente *TV* y se designa con el argumento *Formula = Sales \~ TV* de los datos (*data*) de entrenamiento pero en función de elevar a la quinta potencia el valor del coeficiente TV.
+
+$$
+Y = \beta0 + \beta_1\cdot x_i+\beta_2\cdot x_i^2 + ... \beta_5\cdot x_i^5
+$$
+
+### Usando argumento Poly
+
+```{r}
+
+modelo.poly5 <- lm(data = datos.entrenamiento, formula = Sales ~ poly(x = TV, degree = 5, raw = TRUE))
+
+
+```
+
+### Resumen del modelo
+
+Generando el resumen del modelo
+
+```{r}
+resumen <- summary(modelo.poly5)
+resumen
+```
+
+Los coeficientes tienen un nivel de confianza por encima del 90% ('\*\*\*') excepto el predictor b5 que tienen un nivel de confianza por debajo del 90%. Sin embargo se aceptan los predictores.
+
+### El valor de los coeficientes con modelo Poly
+
+```{r}
+b0 <- modelo.poly5$coefficients[1]
+b1 <- modelo.poly5$coefficients[2]
+b2 <- modelo.poly5$coefficients[3]
+b3 <- modelo.poly5$coefficients[4]
+b4 <- modelo.poly5$coefficients[5]
+b5 <- modelo.poly5$coefficients[6]
+b0; b1; b2; b3; b4; b5
+
+```
+
+### Valor de R Square
+
+El valor de *Multiple R-squared* es de 0.6426 o del 64.26% por lo que **SI SE ACEPTA EL MODELO** por encima del **60%** como inicialmente se estableció como meta.
+
+```{r}
+resumen$r.squared
+```
+
+### Predicciones del modelo
+
+Con la función *predict()* se generan predicciones de los datos de validación.
+
+Las predicciones estarán en función de la fórmula y de los valores de los coeficentes a y b:
+
+$$
+Y = \beta0 + \beta_1\cdot x+\beta_2\cdot x^2 \beta_3\cdot x^3+ \beta_4\cdot x^4 + \beta_5\cdot x^5 \\ \therefore \\
+Y = 3.200194  +  0.2979779\cdot TV_i + -0.004548809 \cdot TV_i^2 + 3.519913e-05 \cdot TV_i^3 + -1.218158e-07 \cdot TV_i^4 + 1.547874e-10  \cdot TV_i^5
+$$
+
+```{r}
+predicciones <- predict(object = modelo.poly5, newdata = datos.validacion)
+
+```
+
+#### Curva de estimación
+
+```{r}
+ggplot(data = datos.entrenamiento, aes(x = TV, y = Sales)) + 
+  geom_point(colour = "blue") + 
+  geom_line(aes(x = TV, y = modelo.poly5$fitted.values, colour = 'red'))
+```
+
+#### Generar tabla comparativa
+
+Se construye una tabla comparativa con los datos de validación y las predicciones generadas para comparar y generar el estadístico *rmse*.
+
+```{r}
+tabla <- data.frame(TV = datos.validacion$TV, Sales.real = datos.validacion$Sales, Sales.predicciones = predicciones)
+tabla
+```
+
+#### Evaluar predicciones con *rmse*
+
+Se determina la variación de los valores reales contra las predicciones por medio del estadístico *rmse (Root Mean Stándar Error)* que servirá para compararse con otro modelo concluyendo que en el que tenga menor error es mas eficiente el modelo.
+
+*rmse* Root Mean Stándar Error, este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+Se obtiene la métrica con la función *rmse*() de la librería *Metrics* previamente argada.
+
+```{r}
+rmse.poly5 <- rmse(actual = tabla$Sales.real, predicted = tabla$Sales.predicciones)
+rmse.poly5
+```
+
+El valor de *rmse* es de: `r rmse.poly5` y habrá que compararse con otro modelo que se haya construido con los mismos datos y las mismas variables, ejemplo modelos de regresión polinomial.
+
+# Interpretación
+
+Los tres modelos tienen un *R Square* por encima del 60% por lo que se acepta el modelo conforme a la métrica establecida como estadístico de medición. Estosignifica que la variable TV explica al menos el 60% a la variable Sales.
+
+Los coeficientes de los tres modelos son diferents de 0 con nivees de confianza en su mayoría por encima del 90%
+
+La tabla siguiente resume cual modelo es más eficiente dado que tiene menor error de variación *rmse = Root Mean Stándar Error*.
+
+```{r}
+modelos <- c("Lineal Simple", "Polinomial Segundo nivel", "Polinomial Quinto nivel")
+rmse <- c(c(rmse.lineal, rmse.poly2, rmse.poly5))
+comparativo.rmse <- data.frame(modelos, rmse)
+```
+
+```{r}
+kable(x = comparativo.rmse, caption = "Comparativo con rmse", )
+```
+
+El modelo más óptimo en cuanto a la métrica de *rmse* es **Polinomial Segundo nivel con un valor de 3.092417 comparado con los otros dos** y que significa que las predicciones tienen menor variación o diferencia con respecto a los valores reales.
