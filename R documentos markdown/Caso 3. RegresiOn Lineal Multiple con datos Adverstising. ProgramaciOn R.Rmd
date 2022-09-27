@@ -157,7 +157,7 @@ Y <- \beta_0 + \beta_1 \cdot X_1 + \beta2\cdot X_2 +\beta\cdot X_3 +...+ \beta_n
 $$
 
 ```{r}
-modelo_rm <- lm(data = datos, formula = Sales ~ TV + Radio + Newspaper + Web)
+modelo_rm <- lm(data = datos.entrenamiento, formula = Sales ~ TV + Radio + Newspaper + Web)
 
 summary(modelo_rm)
 
