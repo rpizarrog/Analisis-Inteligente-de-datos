@@ -9,6 +9,7 @@ output:
     toc_float: true
     toc_depth: 6
     number_sections: yes
+bibliography: references.bib
 ---
 
 # Objetivo
@@ -31,7 +32,27 @@ Crear y evaluar un modelo de regresión lineal múltiple para predecir las venta
 
 # Fundamento teórico
 
-Pendiente ...
+En la mayoría de los problemas de investigación en los que se aplica el análisis de regresión se necesita más de una variable independiente para el modelo de regresión.
+
+La complejidad de la mayoría de mecanismos científicos es tal que, con el fin de predecir una respuesta importante, se requiere un modelo de regresión múltiple. Cuando un modelo es lineal en los coeficientes se denomina modelo de regresión lineal múltiple.
+
+Para el caso de k variables independientes, $x_1,x_2,x_3…,x_k$, y $y$ como la variable dependiente.
+
+$x_1, x_2, x_3,...,x_k$ son las variable s que afectan a la variable dependiente en el modelo de regresión lineal múltiple.
+
+Muchos problemas de investigación y de la industria, requieren la estimación de las relaciones existentes entre el patrón de variabilidad de una variable aleatoria y los valores de una o más variables aleatorias. [@urrutiamosquera2011]
+
+Al generar un modelo de regresión lineal múltiple es importante identificar los estadísticos de R2, que se denomina coeficiente de determinación y es una medida de la proporción de la variabilidad explicada por el modelo ajustado.
+
+De igual forma, el valor de R2 ajustado (*R Square Adjusted*) o coeficiente de determinación ajustado, es una variación de R2 que proporciona un ajuste para los grados de libertad [\@walpole2012].
+
+El estadístico R Ajustado está diseñado para proporcionar un estadístico que castigue un modelo sobreajustado, de manera que se puede esperar que favorezca al modelo [@walpole2012].
+
+Una variable **Y** puede predecirse conforme y de acuerdo con la siguiente fórmula de la regresión múltiple.
+
+$$
+Y = b_0 + b_1{x_1} + b_2{x_2} + b_3{x_3}+ …..b_k{x_k}
+$$
 
 # Desarrollo
 
