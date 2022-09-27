@@ -153,7 +153,7 @@ El modelo se construye con datos de entrenamiento
 Modelo de Regresión Múltiple o Multivarido
 
 $$
-Y <- \beta_0 + \beta_1 \cdot X_1 + \beta2\cdot X_2 +\beta\cdot X_3 +...+ \beta_n\cdot X_n
+Y <- \beta_0 + \beta_1 \cdot X_1 + \beta_2\cdot X_2 +\beta\cdot X_3 +...+ \beta_n\cdot X_n
 $$
 
 ```{r}
@@ -171,7 +171,9 @@ Fómula Rsquare Ajustado
 
 [![Fórmula R Square ajusado](images/formula%20de%20R%20Square%20Ajustado.jpg "Fórmula R Square ajusado")](enlace%20...)
 
-El valor de *R Square* ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan aproximadamente el 85% el valor de la variable dependiente (Sales).
+El valor del *R Square* se interpreta que tanto las variables la variabilidad de las ventas. El valor del *R Square* ajustado es expresa que hay buen ajuste entre los datos reales y los datos modelados de predicción [@urrutiamosquera2011].
+
+El valor de *R Square* ajustado en este modelo sobrepasa el 85% que significa que las variables independientes representan o explican aproximadamente el 85% el valor de la variable dependiente (Sales).
 
 Ese valor, se compara contra un métrica inicial esperada que seguramente se define para hablar de que si esta conforme a lo esperado. Por ejemplo se esperaba que este valor estuviera por encima del 70% de tal forma que el modelo si cumple con esa expectativa y el modelo se acepta.
 
