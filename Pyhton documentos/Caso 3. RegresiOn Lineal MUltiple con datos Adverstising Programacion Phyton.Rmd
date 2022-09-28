@@ -1,0 +1,324 @@
+---
+title: "Caso 3. Regresión Lineal Múltiple con datos Adverstising. Programación Python"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de regresión lineal múltiple para predecir las ventas con datos simulados de una empresa dependiendo de las inversiones realizadas en publicidad
+
+# Descripción
+
+-   Cargar librerías y datos
+
+-   Limpiar datos si es necesario
+
+-   Explorar datos
+
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+
+-   Crear modelo de regresión con los datos de entrenamiento
+
+-   Evaluar modelo antes de predicciones con los estadísticos. R Square ajustado y Coeficientes
+
+-   El modelo se acepta si presenta un valor de R Square ajustado por encima del 70%
+
+-   Predicciones
+
+-   Evaluar predicciones con respecto a datos reales
+
+-   Determinar el estadístico *rmse* para evaluar con respecto a otros modelos
+
+-   Interpretar el caso
+
+# Fundamento teórico
+
+En la mayoría de los problemas de investigación en los que se aplica el análisis de regresión se necesita más de una variable independiente para el modelo de regresión.
+
+La complejidad de la mayoría de mecanismos científicos es tal que, con el fin de predecir una respuesta importante, se requiere un modelo de regresión múltiple. Cuando un modelo es lineal en los coeficientes se denomina modelo de regresión lineal múltiple.
+
+Para el caso de k variables independientes, el modelo que da $x_1,x_2,x_3...,x_k$, y $y$ como la variable dependiente.
+
+$x_1, x_2, x_3,...,x_k$ son las variable s que afectan a la variable dependiente en el modelo de regresión lineal múltiple.
+
+Muchos problemas de investigación y de la industria, requieren la estimación de las relaciones existentes entre el patrón de variabilidad de una variable aleatoria y los valores de una o más variables aleatorias. [@urrutiamosquera2011]
+
+Al generar un modelo de regresión lineal múltiple es importante identificar los estadísticos de R2, que se denomina coeficiente de determinación y es una medida de la proporción de la variabilidad explicada por el modelo ajustado.
+
+De igual forma, el valor de R2 ajustado (*R Square Adjusted*) o coeficiente de determinación ajustado, es una variación de R2 que proporciona un ajuste para los grados de libertad [@walpole2012].
+
+El estadístico R Ajustado está diseñado para proporcionar un estadístico que castigue un modelo sobreajustado, de manera que se puede esperar que favorezca al modelo [@walpole2012].
+
+Una variable **Y** puede predecirse conforme y de acuerdo con la siguiente fórmula de la regresión múltiple.
+
+$$
+Y = b_0 + b_1{x_1} + b_2{x_2} + b_3{x_3}+ .....b_k{x_k}
+$$
+
+# Desarrollo
+
+Para trabajar con código Python, se deben cargan las librerías de *Python* previamente instaladas con la función *py_install()* de la librería *reticulate* de R.
+
+La función *repl_python()* se utilizar para ejecutar ventana de comando o *shell* de *Python.*
+
+Se recomienda instalar estos paquetes de *Python*
+
+-   *py_install(packages = "pandas")*
+
+-   *py_install(packages = "matplotlib")*
+
+-   *py_install(packages = "numpy")*
+
+-   *py_install(packages = "sklearn") en R cloud*
+
+-   *py_install("scikit-learn") R Studio local*
+
+-   *py_install(packages = "statsmodels.api")*
+
+-   *py_install(packages = "seaborn")*
+
+-   En terminal de Python se puede actualizar con c*onda create -n py3.8 python=3.8 scikit-learn pandas numpy matplotlib*
+
+## Cargar librerías
+
+```{r}
+library(reticulate)
+```
+
+```{python}
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm # Estadísticas R Adjused
+import seaborn as sns  # Gráficos
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures # Polinomial
+
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import mean_squared_error, r2_score
+```
+
+## Cargar datos
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+datos
+```
+
+## Explorar datos
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+Se describen las variables independientes: TV, Radio Newpaper y la variable dependiente Sales.
+
+Valor de etiqueta o variable objetivo deendiente(ventas): que significa el volumen de ventas del producto correspondiente
+
+Las variables independientes: (TV, Radio, Periódico, WEB):
+
+TV: para un solo producto en un mercado determinado, el costo de la publicidad en TV (en miles) Radio: costos de publicidad invertidos en medios de difusión Periódico: costos publicitarios para medios periodísticos.
+
+```{python}
+datos[['TV','Radio', 'Newspaper', 'Web', 'Sales', ]].describe()
+```
+
+### Dispersión de la variables con respecto a Sales.
+
+```{python}
+sns.pairplot(datos, x_vars=['TV','Radio','Newspaper', 'Web'], y_vars='Sales', size=7, aspect=0.8,kind = 'reg')
+plt.savefig("pairplot.jpg")
+plt.show()
+```
+
+Se observa la relación lineal entre las variables independientes con respecto a ventas, de tal forma que es posible estimar visualmente que la variable Newspaper tal vez tenga poco impacto en las ventas esto por la alta dispersión de los datos. Sin embargo participará en el modelo de regresión lineal múltiple.
+
+Se observa también que la variable *Web* tiene poca correlación lineal con la variable *Sales*
+
+## Limpiar datos
+
+### Identificar variables independientes y dependiente
+
+Quitar las primeras columnas y dejar TV Radio NewsPaper Web y Sales
+
+```{python}
+print("Variables independientes ")
+X_independientes = datos.iloc[:,2:6]
+X_independientes
+```
+
+```{python}
+print ("Variable dependiente")
+Y_dependiente = datos.iloc[:, 6:7]
+Y_dependiente
+```
+
+## Datos de entrenamiento y datos de validación
+
+Se utiliza semilla 2022 (*random_state=2022*)
+
+```{python}
+X_entrena,X_valida,Y_entrena,Y_valida = train_test_split(X_independientes, Y_dependiente,train_size=.70,  random_state=2022)
+```
+
+### Datos de entrenamiento
+
+```{python}
+print("Estructura de datos de entrenamiento... ", X_entrena.shape)
+print(X_entrena)
+print(X_entrena[['TV']], X_entrena[['Radio']], X_entrena[['Newspaper']])
+```
+
+## Modelo de Regresión lineal múltiple
+
+Se construye el modelo de regresión lineal mútiple
+
+```{python}
+modelo_rm = LinearRegression()
+ 
+modelo_rm.fit(X_entrena,Y_entrena)
+ 
+
+```
+
+### Evaluación del modelo antes de predicciones
+
+Se presentan los coeficientes, la intersección $\beta_0$ y los coeficientes para cada variable independiente, $\beta_1, \beta_2,\beta_3, \text{ y } \beta_4$
+
+```{python}
+print ("Intercepción o b0") 
+b0 = modelo_rm.intercept_
+print (b0)
+
+print ("Coeficientes: b1, b2, b3 y b4") 
+# print (modelo_rm.coef_)
+b1 = modelo_rm.coef_[0, 0:1]
+b2 = modelo_rm.coef_[0, 1:2]
+b3 = modelo_rm.coef_[0, 2:3]
+b4 = modelo_rm.coef_[0, 3:4]
+print (b1, b2, b3, b4)
+```
+
+$$
+Prediccion:\text { Y} = b_0 + b_1\cdot {x_1} + b_2\cdot{x_2} + b_3\cdot{x_3}+b_3\cdot{x_4}
+$$
+
+$$
+\text{Prediccion Sales} :\text { Y} = b_0 + b_1\cdot {TV} + b_2\cdot{Radio} + b_3\cdot{Newspaper}+b_3\cdot{Web}
+$$
+
+### R Square y R Square ajustado a a partir del modelo
+
+Sobrepasa el 80% de tal forma que el el modelo **SE ACEPTA** por este criterio.
+
+```{python}
+print(modelo_rm.score(X_entrena, Y_entrena))
+```
+
+## Predicciones
+
+Se hacen predicciones con los datos de validación
+
+```{python}
+predicciones = modelo_rm.predict(X_valida)
+print(predicciones[:-1])
+print(predicciones.shape)
+
+```
+
+## Evaluar predicciones
+
+Crear un data.frame llamado comparaciones a partir de la creación de un diccionario con los valores reales del conjunto de entrenamiento y las predicciones calculadas.
+
+Se usa el *type()* para conocer el tipo de estructura de datos
+
+Se usa el *assign()* para agregar columnas al df comparaciones
+
+Se usa *flatten().tolist()* para convertir a una lista de una dimensión.
+
+Al final se tiene un d*ata.frame* llamado comparaciones en donde las últimas columnas tienen los valores reales de 'Sales' y las predicciones en la variable 'Predicho'.
+
+```{python}
+print(type(X_valida))
+# print(X_valida)
+
+print(type(predicciones))
+# print(predicciones)
+
+
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(Sales_Real = Y_valida)
+comparaciones = comparaciones.assign(Predicho = predicciones.flatten().tolist())
+print(comparaciones)
+```
+
+### RMSE
+
+*rmse* Root Mean Stándard Error (*Root-mean-square deviation*), este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Y_valida, predicciones))
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones)))
+```
+
+## Graficar prediciones contra valores reales
+
+Pendiente ... ...
+
+## Predicciones con datos nuevos
+
+Se hacen predicciones con datos nuevos. Pendiente ... ...
+
+# Interpretación
+
+Pendiente ...
+
+Con este modelo y con estos datos interprete lo siguiente:
+
+-   ¿Cuál es el contexto de los datos?
+
+-   ¿Cuántas observaciones se analizan y cuáles son las variables de interés?
+
+-   ¿Cuáles son las variables independientes y dependientes?
+
+-   ¿Cuál es el porcentaje de datos de entrenamiento y datos de validación ?
+
+-   ¿Son los coeficientes confiables al menos al 90% para hacer predicciones?,
+
+-   ¿Cuál nivel de confianza para cada coeficiente?
+
+-   ¿Que valor tiene el estadístico el *R Square* ajustado y que representa o qué significa?
+
+-   ¿Cuál es el valor de *RMSE* y qué significaría este valor
+
+-   ¿Puede haber otro modelo más óptimo para estos datos?
+
+-   ¿Que tan confiables son las predicciones con datos nuevos con este modelo y con estos datos?
+
+-   Comparado con el modelo elaborado en lenguaje R cual tiene menor *rmse* y qué significa?
+
+# Bibliografía
