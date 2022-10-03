@@ -1,0 +1,251 @@
+---
+title: "Arbol de regresión con datos Advertising"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de árbol de regresión para predecir las ventas con datos simulados de una empresa dependiendo de las inversiones realizadas en publicidad.
+
+# Descripción
+
+-   Cargar librerías y datos
+-   Limpiar datos si es necesario
+-   Explorar datos
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+-   Crear modelo de árbol de regresión con los datos de entrenamiento
+-   Hacer Predicciones con datos de validación
+-   Evaluar predicciones 
+-   Determinar el estadístico *rmse* para evaluar con respecto a otros modelos
+-   Interpretar el caso
+
+# Fundamento teórico
+
+Los algoritmos de aprendizaje basados en árbol se consideran uno de los mejores y más utilizados métodos de aprendizaje supervisado. Potencian modelos predictivos con alta precisión, estabilidad y facilidad de interpretación.
+
+Los árboles de clasificación y **regresión** son métodos que proporcionan modelos que satisfacen objetivos tanto predictivos como explicativos.
+
+Algunas ventajas son su sencillez y la representación gráfica mediante árboles y, por otro, la definición de reglas de asociación entre variables que incluye expresiones de condición que permiten explicar las predicciones.
+
+Se pueden usar para regresiones con variables dependientes que tienen valores numéricos continuos o para clasificaciones con variables categóricas.
+
+Utilizar un árbol de regresión para crear un modelo explicativo y predictivo para una variable cuantitativa dependiente basada en variables explicativas independientes cuantitativas y cualitativas [@xlstatbyaddinsoft].
+
+Un árbol de regresión consiste en hacer preguntas de tipo $¿x_k < c?$ para cada una de las covariables, de esta forma el espacio de las covariables es divido en hiper-rectángulos (con el resultado de las condicionales) de las observaciones que queden dentro de un hiper-rectángulo tendrán el mismo valor estimado $\hat{y}$ o $Y$ .[@hernández2021]
+
+Por otra parte, bajo el paradigma divide y vencerás, usando árboles de regresión y decisión y correspondientes reglas, el árbol representa el modelo similar a un diagrama de flujo en el que los nodos de decisión, los nodos de hoja y las ramas definen una serie de decisiones que se pueden usar para generar predicciones. Siguiendo las reglas se encuentran predicciones en la hoja final. [@lantz2013].
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+
+library(rpart) # Para árbol
+library(rpart.plot) # Para árbol
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+```
+
+## Explorar datos
+
+Son 200 registros tres variables independientes y una variable dependiente.
+
+La variable dependiente o variable objetivo es *Sales* que deberá estar en función de la inversión que se hace en *TV, Radio, Newspaper* o *Web*.
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+### Limpiar datos
+
+Quitar las primeras columnas
+
+```{r}
+datos <- select(datos, TV, Radio, Newspaper, Web, Sales)
+
+```
+
+### head(datos)
+
+```{r}
+kable(head(datos, 20), caption = "Primeros 20 registros")
+```
+
+### tail(datos)
+
+```{r}
+kable(tail(datos, 20), caption = "Últimos 20 registros")
+```
+
+## Datos de entrenamiento y validación
+
+### Datos de entrenamiento
+
+```{r}
+n <- nrow(datos)
+
+# Modificar la semilla estableciendo como parámetro los útimos cuatro dígitos de su no de control. 
+# Ej. set.seed(0732), o set.seed(1023)
+# set.seed(2022) 
+set.seed(2022)
+
+```
+
+De manera aleatoria se construyen los datos de entrenamiento y los datos de validación.
+
+En la variable *entrena* se generan los registros que van a ser los datos de entrenamiento, de tal forma que los datos de validación serán los que no sena de entrenamiento [-*entrena*].
+
+```{r}
+
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+#### head()
+
+```{r}
+kable(head(datos.entrenamiento, 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.entrenamiento, 20), caption = "Datos de entrenamiento ültimos 20 registros")
+```
+
+### Datos de validación
+
+Los datos de validación deben ser diferentes a los datos den entrenamiento.
+
+#### head()
+
+```{r}
+kable(head(datos.validacion, 20), caption = "Datos de Validación Primeros 20 registros")
+
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 registros")
+```
+
+## Construir el modelo
+
+Se construye el modelo con la función *rpart*
+
+```{r}
+modelo_ar <- rpart(data = datos.entrenamiento,formula = Sales ~ TV + Radio + Newspaper )
+modelo_ar
+
+```
+
+### resumen del modelo
+
+```{r}
+summary(modelo_ar)
+```
+
+### Representar visualmente el árbol de regresión
+
+```{r}
+rpart.plot(modelo_ar)
+
+```
+
+## Predecir valores con datos de validación
+
+```{r}
+predicciones <- predict(object = modelo_ar, newdata = datos.validacion)
+
+
+```
+
+Construir un *data frame* para comparar y luego evaluar
+
+```{r}
+comparaciones <- data.frame(datos.validacion, predicciones)
+comparaciones
+```
+
+## *rmse* Root Mean Stándard Error (*Root-mean-square deviation*),
+
+Este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el *rmse*, mejor podrá un modelo ajustar los datos.
+
+Se compara este valor de *rmse* con respecto al modelo de regresión múltiple
+
+Con este modelo de árbol de regresión, los mismos datos, mismas particiones se tuvo un valor de 1.455681 por lo que se puede interpretar que este modelo de regresión fué mejor con respecto a la métrica *rmse* con respecto al modelo de regresión múltiple que tuvo un valor de 1.543975.
+
+```{r}
+rmse <- rmse(actual = comparaciones$Sales, predicted = comparaciones$predicciones)
+rmse
+```
+
+## Graficar predicciones contra valores reales
+
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = 1:nrow(comparaciones), y = Sales), col='blue') +
+  geom_line(aes(x = 1:nrow(comparaciones), y = predicciones), col='yellow') +
+  ggtitle(label="Valores reales vs predichos Adverstising", subtitle = "Arbol de Regresión") 
+  
+  
+```
+
+## Predicciones con datos nuevos
+
+```{r}
+TV <- c(140, 160)
+Radio <- c(60, 40)
+Newspaper <- c(80, 90) 
+
+nuevos <- data.frame(TV, Radio, Newspaper)  
+nuevos
+
+Y.predicciones <- predict(object = modelo_ar, newdata = nuevos)
+Y.predicciones
+```
+
+# Interpretación
+
+Pendiente
+
+# Bibliografía
