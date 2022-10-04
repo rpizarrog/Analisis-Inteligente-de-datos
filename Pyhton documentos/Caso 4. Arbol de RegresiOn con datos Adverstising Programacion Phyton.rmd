@@ -1,0 +1,326 @@
+---
+title: "Caso 4. Arbol de Regresión con datos Advertising. Programación Python"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de árbol de regresión para predecir las ventas con datos simulados de una empresa dependiendo de las inversiones realizadas en publicidad.
+
+# Descripción
+
+-   Se utiliza programación Python
+
+-   Cargar librerías y datos
+
+-   Limpiar datos si es necesario
+
+-   Explorar datos
+
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+
+-   Crear modelo de regresión con los datos de entrenamiento
+
+-   Predicciones
+
+-   Evaluar predicciones con respecto a datos reales
+
+-   Determinar el estadístico *rmse* para evaluar con respecto a otros modelos
+
+-   Interpretar el caso
+
+# Fundamento teórico
+
+Los algoritmos de aprendizaje basados en árbol se consideran uno de los mejores y más utilizados métodos de aprendizaje supervisado. Potencían modelos predictivos con alta precisión, estabilidad y facilidad de interpretación.
+
+Los árboles de clasificación y **regresión** son métodos que proporcionan modelos que satisfacen objetivos tanto predictivos como explicativos.
+
+Algunas ventajas son su sencillez y la representación gráfica mediante árboles y, por otro, la definición de reglas de asociación entre variables que incluye expresiones de condición que permiten explicar las predicciones.
+
+Se pueden usar para regresiones con variables dependientes que tienen valores numéricos continuos o para clasificaciones con variables categóricas.
+
+Utilizar un árbol de regresión para crear un modelo explicativo y predictivo para una variable cuantitativa dependiente basada en variables explicativas independientes cuantitativas y cualitativas [@xlstatbyaddinsoft].
+
+Un árbol de regresión consiste en hacer preguntas de tipo $¿x_k < c?$ para cada una de las covariables, de esta forma el espacio de las covariables es divido en hiper-rectángulos (con el resultado de las condicionales) de las observaciones que queden dentro de un hiper-rectángulo tendrán el mismo valor estimado $\hat{y}$ o $Y$ . [@hernández2021]
+
+Por otra parte, bajo el paradigma divide y vencerás, usando árboles de regresión y decisión y correspondientes reglas, el árbol representa el modelo similar a un diagrama de flujo en el que los nodos de decisión, los nodos de hoja y las ramas definen una serie de decisiones que se pueden usar para generar predicciones. Siguiendo las reglas se encuentran predicciones en la hoja final. . [@lantz2013]
+
+# Desarrollo
+
+Para trabajar con código Python, se deben cargan las librerías de *Python* previamente instaladas con la función *py_install()* de la librería *reticulate* de R.
+
+La función *repl_python()* se utilizar para ejecutar ventana de comando o *shell* de *Python.*
+
+Se recomienda instalar estos paquetes de *Python*
+
+-   *py_install(packages = "pandas")*
+
+-   *py_install(packages = "matplotlib")*
+
+-   *py_install(packages = "numpy")*
+
+-   *py_install(packages = "sklearn") en R cloud*
+
+-   *py_install("scikit-learn") R Studio local*
+
+-   *py_install(packages = "statsmodels.api")*
+
+-   *py_install(packages = "seaborn")*
+
+-   En terminal de Python se puede actualizar con c*onda create -n py3.8 python=3.8 scikit-learn pandas numpy matplotlib*
+
+## Cargar librerías
+
+```{r warning=FALSE, message=FALSE}
+library(reticulate)
+```
+
+```{python}
+# Tratamiento de datos
+import numpy as np
+import pandas as pd
+
+# Gráficos
+import matplotlib.pyplot as plt
+
+# Preprocesado y modelado
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import plot_tree
+from sklearn.tree import export_graphviz
+from sklearn.tree import export_text
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
+from sklearn.metrics import mean_squared_error, r2_score
+
+
+```
+
+## Cargar datos
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+datos
+```
+
+## Explorar datos
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+```{python}
+datos.info()
+```
+
+Se describen las variables independientes: TV, Radio Newpaper y la variable dependiente Sales.
+
+Valor de etiqueta o variable objetivo deendiente(ventas): que significa el volumen de ventas del producto correspondiente
+
+Las variables independientes: (TV, Radio, Periódico, WEB):
+
+-   TV: son los costos de la publicidad en TV (en miles)
+
+-   Radio: costos de publicidad invertidos en medios de difusión radio;
+
+-   Newspaper Periódico: costos publicitarios para medios impresos.
+
+-   Web: Costos de publicidad invertidos en herramientas digitales.
+
+## Limpiar datos
+
+Quitar las primeras columnas y dejar TV Radio NewsPaper Web y Sales
+
+```{python}
+datos = datos[['TV','Radio', 'Newspaper', 'Web', 'Sales']]
+datos.describe()
+
+
+```
+
+```{python}
+datos
+```
+
+## Datos de entrenamiento y datos de validación
+
+Se utiliza semilla 2022 (*random_state=2022*)
+
+La función *train_test_split()* parte los datos originales el 70% y 30% para datos de entrenamiento y validación y con el argumento *datos.drop(columns = "Sales"), datos['Sales']* solo incluye las variables independientes; la semilla de aleatoriedad es 2022.
+
+```{python}
+X_entrena, X_valida, Y_entrena, Y_valida = train_test_split(datos.drop(columns = "Sales"), datos['Sales'],train_size=.70,  random_state=2022)
+
+
+```
+
+### Datos de entrenamiento
+
+```{python}
+print("Estructura de datos de entrenamiento... ", X_entrena.shape)
+print(X_entrena)
+print(X_entrena[['TV']], X_entrena[['Radio']], X_entrena[['Newspaper']], X_entrena[['Web']])
+```
+
+## Modelo de Árbol de Regresión
+
+Se construye el modelo de árbol de regresión.
+
+La clase *DecisionTreeRegressor* del módulo *sklearn.tree* permite entrenar árboles de decisión para problemas de regresión.
+
+Algunos parámetros de la función serían los siguientes:
+
+-   `max_depth`: profundidad máxima que puede alcanzar el árbol.
+
+-   `min_samples_split`: número mínimo de observaciones que debe de tener un nodo para que pueda dividirse. Si es un valor decimal se interpreta como fracción del total de observaciones de entrenamiento `ceil(min_samples_split * n_samples)`.
+
+-   `min_samples_leaf`: número mínimo de observaciones que debe de tener cada uno de los nodos hijos para que se produzca la división. Si es un valor decimal se interpreta como fracción del total de observaciones de entrenamiento `ceil(min_samples_split * n_samples)`.
+
+-   `max_leaf_nodes`: número máximo de nodos terminales.
+
+-   `random_state`: semilla para que los resultados sean reproducibles. Tiene que ser un valor entero. [@amat2020]
+
+```{python}
+modelo_ar = DecisionTreeRegressor(
+            max_depth         = 3,
+            random_state      = 2022
+          )
+```
+
+Utilizar los datos de entrenamiento (X_entrena y Y_entrena) con el modelo de árbol de regresión.
+
+```{python}
+modelo_ar.fit(X_entrena, Y_entrena)
+```
+
+### Visualización del modelo
+
+Toda vez creado el modelo, se puede representar mediante la combinación de las funciones *plot_tree()* y *export_text()*.
+
+La función *plot_tree()* dibuja la estructura del árbol y muestra el número de observaciones y valor medio de la variable respuesta en cada nodo.
+
+La función *export_text()* representa esta misma información en formato texto. [@amat2020].
+
+```{python}
+fig, ax = plt.subplots(figsize=(12, 5))
+
+print(f"Profundidad del árbol: {modelo_ar.get_depth()}")
+print(f"Número de nodos terminales: {modelo_ar.get_n_leaves()}")
+
+plot = plot_tree(
+            decision_tree = modelo_ar,
+            feature_names = datos.drop(columns = "Sales").columns,
+            class_names   = 'Sales',
+            filled        = True,
+            impurity      = False,
+            fontsize      = 10,
+            precision     = 2,
+            ax            = ax
+       )
+
+plot
+```
+
+```{python}
+texto_modelo = export_text(
+                    decision_tree = modelo_ar,
+                    feature_names = list(datos.drop(columns = "Sales").columns)
+               )
+print(texto_modelo)
+```
+
+## Predicciones
+
+La importancia de cada predictor en modelo se calcula como la reducción total (normalizada) en el criterio de división, en este caso el *mse*, que consigue el predictor en las divisiones en las que participa. Si un predictor no ha sido seleccionado en ninguna divisón, no se ha incluido en el modelo y por lo tanto su importancia es 0. [@amat2020].
+
+### Evaluar predictores
+
+```{python}
+importancia_predictores = pd.DataFrame(
+                            {'predictor': datos.drop(columns = "Sales").columns,
+                             'importancia': modelo_ar.feature_importances_}
+                            )
+print("Importancia de los predictores en el modelo")
+importancia_predictores.sort_values('importancia', ascending=False)
+
+```
+
+Se hacen predicciones con los datos de validación usando el modelo de árbol de predicción.
+
+```{python}
+predicciones = modelo_ar.predict(X = X_valida)
+
+
+```
+
+### RMSE
+
+*rmse* Root Mean Stándard Error (*Root-mean-square deviation*), este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (*rmse*) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+*RMSE* es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el rmse, mejor podrá un modelo ajustar los datos.
+
+```{python}
+rmse = mean_squared_error(
+        y_true  = Y_valida,
+        y_pred  = predicciones,
+        squared = False
+       )
+print(f"El error (rmse) de test es: {rmse}")
+```
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Y_valida, predicciones))
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones)))
+```
+
+## Visualizar predicciones contra valores reales
+
+Pendiente ... ...
+
+## Predicciones con datos nuevos
+
+Se hacen predicciones con datos nuevos. Pendiente ... ...
+
+# Interpretación
+
+Pendiente ...
+
+Con este modelo y con estos datos interprete lo siguiente:
+
+-   ¿Cuál es el contexto de los datos?
+
+-   ¿Cuántas observaciones se analizan y cuáles son las variables de interés?
+
+-   ¿Cuáles son las variables independientes y dependientes?
+
+-   ¿Cuál es el porcentaje de datos de entrenamiento y datos de validación ?
+
+    ¿Cuál es el valor de *RMSE* y qué significaría este valor
+
+-   ¿Puede haber otro modelo más óptimo para estos datos?
+
+-   ¿Que tan confiables son las predicciones con datos nuevos con este modelo y con estos datos?
+
+-   Comparado con el modelo elaborado en lenguaje R cual tiene menor *rmse* y qué significa?
+
+# Bibliografía
