@@ -1,0 +1,295 @@
+---
+title: "Caso 5. Bosques Aleatorios con datos adevtising. Programamción R"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de arboles aleatotios (*random forest)* para predecir las ventas con datos simulados de una empresa dependiendo de las inversiones realizadas en publicidad.
+
+# Descripción
+
+-   Cargar librerías y datos
+-   Limpiar datos si es necesario
+-   Explorar datos
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+-   Crear modelo de árbol de regresión con los datos de entrenamiento
+-   Hacer Predicciones con datos de validación
+-   Evaluar predicciones
+-   Determinar el estadístico *rmse* para evaluar con respecto a otros modelos
+-   Interpretar el caso
+
+# Fundamento teórico
+
+Extraído de : [@amatrodrigo2017]
+
+Un modelo **Random Forest** está formado por un conjunto (*ensemble*) de árboles de decisión individuales, cada uno entrenado con una muestra aleatoria extraída de los datos de entrenamiento originales mediante [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)). Esto implica que cada árbol se entrena con unos datos ligeramente distintos.
+
+En cada árbol individual, las observaciones se van distribuyendo por bifurcaciones (nodos) generando la estructura del árbol hasta alcanzar un nodo terminal. La predicción de una nueva observación se obtiene agregando las predicciones de todos los árboles individuales que forman el modelo.
+
+Para entender cómo funcionan los modelos **Random Forest** es necesario conocer primero los conceptos de *ensemble* y *bagging*.
+
+## Métodos de ensemble
+
+Todos los modelos de aprendizaje estadístico y *machine learning* sufren el problema de equilibrio entre bias y varianza.
+
+El término bias (sesgo) hace referencia a cuánto se alejan en promedio las predicciones de un modelo respecto a los valores reales. Refleja cómo de capaz es el modelo de aprender la relación real que existe entre los predictores y la variable respuesta. Por ejemplo, si la relación sigue un patrón no lineal, por muchos datos de los que se disponga, un modelo de regresión lineal no podrá modelar correctamente la relación, por lo que tendrá un bias alto.
+
+El término varianza hace referencia a cuánto cambia el modelo dependiendo de los datos utilizados en su entrenamiento. Idealmente, un modelo no debería modificarse demasiado por pequeñas variaciones en los datos de entrenamiento, si esto ocurre, es porque el modelo está memorizando los datos en lugar de aprender la verdadera relación entre los predictores y la variable respuesta. Por ejemplo, un modelo de árbol con muchos nodos, suele variar su estructura con que apenas cambien unos pocos datos de entrenamiento, tiene mucha varianza.
+
+A medida que aumenta la complejidad de un modelo, este dispone de mayor flexibilidad para adaptarse a las observaciones, reduciendo así el bias y mejorando su capacidad predictiva. Sin embargo, alcanzado un determinado grado de flexibilidad, aparece el problema de [*overfitting*](https://en.wikipedia.org/wiki/Overfitting), el modelo se ajusta tanto a los datos de entrenamiento que es incapaz de predecir correctamente nuevas observaciones. El mejor modelo es aquel que consigue un **equilibrio óptimo entre bias y varianza**.
+
+¿Cómo se controlan el bias y varianza en los modelos basados en árboles? Por lo general, los árboles pequeños (pocas ramificaciones) tienen poca varianza pero no consiguen representar bien la relación entre las variables, es decir, tienen bias alto. En contraposición, los árboles grandes se ajustan mucho a los datos de entrenamiento, por lo que tienen muy poco bias pero mucha varianza. Una forma de solucionar este problema son los métodos de *ensemble*.
+
+Los métodos de *ensemble* combinan múltiples modelos en uno nuevo con el objetivo de lograr un equilibro entre bias y varianza, consiguiendo así mejores predicciones que cualquiera de los modelos individuales originales. Dos de los tipos de *ensemble* más utilizados son:
+
+-   **Bagging**: Se ajustan múltiples modelos, cada uno con un subconjunto distinto de los datos de entrenamiento. Para predecir, todos los modelos que forman el agregado participan aportando su predicción. Como valor final, se toma la media de todas las predicciones (variables continuas) o la clase más frecuente (variables categóricas). Los modelos *Random Forest* están dentro de esta categoría.
+
+-   **Boosting**: Se ajustan secuencialmente múltiples modelos sencillos, llamados *weak learners*, de forma que cada modelo aprende de los errores del anterior. Como valor final, al igual que en *bagging*, se toma la media de todas las predicciones (variables continuas) o la clase más frecuente (variables cualitativas). Tres de los métodos de *boosting* más empleados son *AdaBoost*, *Gradient Boosting* y *Stochastic Gradient Boosting*.
+
+Aunque el objetivo final es el mismo, lograr un balance óptimo entre bias y varianza, existen dos diferencias importantes:
+
+-   Forma en que consiguen reducir el error total. El error total de un modelo puede descomponerse como $bias+varianza+ϵ$.
+
+En *bagging*, se emplean modelos con muy poco bias pero mucha varianza, agregándolos se consigue reducir la varianza sin apenas inflar el bias. En *boosting*, se emplean modelos con muy poca varianza pero mucho bias, ajustando secuencialmente los modelos se reduce el bias. Por lo tanto, cada una de las estrategias reduce una parte del error total.
+
+-   Forma en que se introducen variaciones en los modelos que forman el *ensemble*. En *bagging*, cada modelo es distinto del resto porque cada uno se entrena con una muestra distinta obtenida mediante [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)). En *boosting*, los modelos se ajustan secuencialmente y la importancia (peso) de las observaciones va cambiando en cada iteración, dando lugar a diferentes ajustes.
+
+La clave para que los métodos de *ensemble* consigan mejores resultados que cualquiera de sus modelos individuales es que, los modelos que los forman, sean lo más diversos posibles (sus errores no estén correlacionados). Una analogía que refleja este concepto es la siguiente: supóngase un juego como el *trivial* en el que los equipos tienen que acertar preguntas sobre temáticas diversas. Un equipo formado por muchos jugadores, cada uno experto en un tema distinto, tendrá más posibilidades de ganar que un equipo formado por jugadores expertos en un único tema o por un único jugador que sepa un poco de todos los temas.
+
+A continuación, se describe con más detalle la estrategia de *bagging*, sobre la que se fundamenta el modelo **Random Forest**.
+
+## Bagging
+
+El término *bagging* es el diminutivo de *bootstrap aggregation*, y hace referencia al empleo del muestreo repetido con reposición [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)) con el fin de reducir la varianza de algunos modelos de aprendizaje estadístico, entre ellos los basados en árboles.
+
+Dadas $n$ muestras de observaciones independientes $Z_1, ... Z_n$, cada una con varianza $\sigma^2$, la varianza de la media de las observaciones $\bar{Z}$ es $\sigma^2 / n$.
+
+En otras palabras, promediando un conjunto de observaciones se reduce la varianza.
+
+Basándose en esta idea, una forma de reducir la varianza y aumentar la precisión de un método predictivo es obtener múltiples muestras de la población, ajustar un modelo distinto con cada una de ellas, y hacer la media (la moda en el caso de variables cualitativas) de las predicciones resultantes.
+
+Como en la práctica no se suele tener acceso a múltiples muestras, se puede simular el proceso recurriendo a [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)), generando así *pseudo-muestras* con los que ajustar diferentes modelos y después agregarlos. A este proceso se le conoce como *bagging* y es aplicable a una gran variedad de métodos de regresión.
+
+En el caso particular de los árboles de decisión, dada su naturaleza de bajo bias y alta varianza, *bagging* ha demostrado tener muy buenos resultados. La forma de aplicarlo es:
+
+Generar BB *pseudo-training sets* mediante *bootstrapping* a partir de la muestra de entrenamiento original.
+
+Entrenar un árbol con cada una de las BB muestras del paso
+
+Cada árbol se crea sin apenas restricciones y no se somete a *pruning*, por lo que tiene varianza alta pero poco bias. En la mayoría de casos, la única regla de parada es el número mínimo de observaciones que deben tener los nodos terminales. El valor óptimo de este hiperparámetro puede obtenerse comparando el *out of bag error* o por validación cruzada.
+
+Para cada nueva observación, obtener la predicción de cada uno de los BB árboles. El valor final de la predicción se obtiene como la media de las BB predicciones en el caso de variables cuantitativas y como la clase predicha más frecuente (moda) para variables cualitativas.
+
+En el proceso de *bagging*, el número de árboles creados no es un hiperparámetro crítico en cuanto a que, por mucho que se incremente el número, no se aumenta el riesgo de *overfitting*. Alcanzado un determinado número de árboles, la reducción de *test error* se estabiliza. A pesar de ello, cada árbol ocupa memoria, por lo que no conviene almacenar más de los necesarios.
+
+## Entrenamiento de Random Forest
+
+El algoritmo de *Random Forest* es una modificación del proceso de *bagging* que consigue mejorar los resultados gracias a que *decorrelaciona* aún más los árboles generados en el proceso.
+
+Recordando el apartado anterior, los beneficios del *bagging* se basan en el hecho de que, promediando un conjunto de modelos, se consigue reducir la varianza. Esto es cierto siempre y cuando los modelos agregados no estén correlacionados. Si la correlación es alta, la reducción de varianza que se puede lograr es pequeña.
+
+Supóngase un set de datos en el que hay un predictor muy influyente, junto con otros moderadamente influyentes. En este escenario, todos o casi todos los árboles creados en el proceso de *bagging* estarán dominados por el mismo predictor y serán muy parecidos entre ellos. Como consecuencia de la alta correlación entre los árboles, el proceso de *bagging* apenas conseguirá disminuir la varianza y, por lo tanto, tampoco mejorar el modelo.
+
+*Random forest* evita este problema haciendo una selección aleatoria de mm predictores antes de evaluar cada división. De esta forma, un promedio de $(p−m)/p$ divisiones no contemplarán el predictor influyente, permitiendo que otros predictores puedan ser seleccionados. Añadiendo este paso extra se consigue *decorrelacionar* los árboles todavía más, con lo que su agregación consigue una mayor reducción de la varianza.
+
+Los métodos de *random forest* y *bagging* siguen el mismo algoritmo con la única diferencia de que, en *random forest*, antes de cada división, se seleccionan aleatoriamente m predictores. La diferencia en el resultado dependerá del valor m escogido. Si $m=p$ los resultados de *random forest* y *bagging* son equivalentes. Algunas recomendaciones son:
+
+-   La raíz cuadrada del número total de predictores para problemas de clasificación. $m \approx \sqrt{p}$
+
+-   Un tercio del número de predictores para problemas de regresión $m \approx \frac{p}{3}$.
+
+-   Si los predictores están muy correlacionados, valores pequeños de $m$ consiguen mejores resultados.
+
+Sin embargo, la mejor forma para encontrar el valor óptimo de mm es evaluar el *out-of-bag-error* o recurrir a validación cruzada.
+
+Al igual que ocurre con *bagging*, *random forest* no sufre problemas de *overfit* por aumentar el número de árboles creados en el proceso. Alcanzado un determinado número, la reducción del error de test se estabiliza.
+
+# Desarrollo
+
+## Cargar librerías
+
+Algunas de ellas se utilizan
+
+```{r message=FALSE, warning=FALSE}
+library(readr) # Para importar datos
+library(dplyr) # Para filtrar   
+library(knitr) # Para datos tabulares
+library(ggplot2) # Para visualizar
+library(plotly)
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+library(rpart) # Para árbol
+library(rpart.plot) # Para árbol
+
+library(randomForest) # Para random forest
+library(caret) # Para hacer divisiones o particiones
+library(reshape)    # Para renombrar columnas
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+```
+
+## Explorar datos
+
+Son 200 registros tres variables independientes y una variable dependiente.
+
+La variable dependiente o variable objetivo es *Sales* que deberá estar en función de la inversión que se hace en *TV, Radio, Newspaper* o *Web*.
+
+```{r}
+str(datos)
+summary(datos)
+```
+
+### Limpiar datos
+
+Quitar las primeras columnas
+
+```{r}
+datos <- select(datos, TV, Radio, Newspaper, Web, Sales)
+```
+
+### head(datos)
+
+```{r}
+kable(head(datos, 20), caption = "Primeros 20 registros")
+```
+
+### tail(datos)
+
+```{r}
+kable(tail(datos, 20), caption = "Últimos 20 registros")
+```
+
+## Datos de entrenamiento y validación
+
+### Datos de entrenamiento
+
+```{r}
+n <- nrow(datos)
+# Modificar la semilla estableciendo como parámetro los útimos cuatro dígitos de su no de control. 
+# Ej. set.seed(0732), o set.seed(1023)
+# set.seed(2022) 
+set.seed(2022)
+```
+
+De manera aleatoria se construyen los datos de entrenamiento y los datos de validación.
+
+En la variable *entrena* se generan los registros que van a ser los datos de entrenamiento, de tal forma que los datos de validación serán los que no sena de entrenamiento [-*entrena*].
+
+```{r}
+entrena <- createDataPartition(y = datos$Sales, p = 0.70, list = FALSE, times = 1)
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+#### head()
+
+```{r}
+kable(head(datos.entrenamiento, 20), caption = "Datos de Entrenamiento. Primeros 20 registros")
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.entrenamiento, 20), caption = "Datos de entrenamiento ültimos 20 registros")
+```
+
+### Datos de validación
+
+Los datos de validación deben ser diferentes a los datos den entrenamiento.
+
+#### head()
+
+```{r}
+kable(head(datos.validacion, 20), caption = "Datos de Validación Primeros 20 registros")
+```
+
+#### tail()
+
+```{r}
+kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 registros")
+```
+
+## Construir el modelo
+
+```{r}
+modelo_rf <- randomForest(x = datos.entrenamiento[,1:4], y = datos.entrenamiento[,5], xtest = datos.validacion[,1:4], ytest = datos.validacion[,5], importance = TRUE, keep.forest = TRUE)
+modelo_rf
+```
+
+Del modelo anterior se rescata el valor de la variable dependiente explicada con las variables independientes que es aproximadamente a razón del 89%.
+
+### Importancia de las variables independientes
+
+Las variables TV y Radio son las más importantes variables para este modelo para estos datos.
+
+```{r}
+modelo_rf$importance
+```
+
+¿Que tan bueno sería el modelo?
+
+### Predicciones
+
+```{r}
+predicciones <- predict(object = modelo_rf, newdata = datos.validacion)
+predicciones
+```
+
+#### Generar un a comparción con los valores reales y las predicciones
+
+```{r}
+comparaciones <- data.frame(reales = datos.validacion$Sales, predicciones)
+comparaciones
+```
+
+#### Evaluar con la métrica MRSE
+
+Este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (rmse) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+RMSE es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el *rmse*, mejor podrá un modelo ajustar los datos.
+
+Se compara este valor de *rmse* con respecto al modelo de regresión múltiple
+
+```{r}
+rmse <- rmse(comparaciones$reales, comparaciones$predicciones)
+rmse
+```
+
+Con este modelo de árbol de regresión, los mismos datos, mismas particiones se tuvo un valor de 1.603962 por lo que se puede interpretar que este modelo de regresión no fue tan bueno como el modelo de árboles de regresión con un valor de *rmse* igual a 1.45568.
+
+Este valor se compara contra otros modelos y en términos de variación con respecto a los valores reales es mas eficiente aquel modelo que se acerca a 0.
+
+#### Visualizar valores reales vs predicciones
+
+```{r}
+ggplot(data = comparaciones) +
+  geom_line(aes(x = 1:nrow(comparaciones), y = reales), col='blue') +
+  geom_line(aes(x = 1:nrow(comparaciones), y = predicciones), col='yellow') +
+  ggtitle(label="Valores reales vs predichos Adverstising", subtitle = "Arbol de Regresión") 
+```
+
+# Bibliografía
