@@ -247,7 +247,7 @@ print(X_entrena[['TV']], X_entrena[['Radio']], X_entrena[['Newspaper']], X_entre
 
 Se crea el modelo con la función *RandomForestRegressor().fit()* con los datos de entrenamiento que contiene la variables independientes en relación a la variable dependiente '*Sales*'.
 
-El argumento *n_estimators* define el número de árboles en el bosque aleatorio. Puede usar cualquier valor numérico para el parámetro n_estimator.
+El argumento *n_estimators* define el número de árboles en el bosque aleatorio. Puede usar cualquier valor numérico para el parámetro *n_estimator*.
 
 El valor argumento de *random_state* es la semilla para la aleatoriedad del modelo
 
@@ -312,7 +312,7 @@ print('Mean Squared Error: MSE', metrics.mean_squared_error(Y_valida, prediccion
 print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones)))
 ```
 
-Para estos datos para estos valores de entrenamiento y validación, el valor de RMSE es aproximadamente 0.7660, menor que el valor de árbol de regresión en *Python* del Caso 4.
+Para estos datos para estos valores de entrenamiento y validación, con un valor de 50 árboles en el modelo, el valor de RMSE es aproximadamente 0.7660, menor que el valor de árbol de regresión en *Python* del Caso 4.
 
 El RMSE obtenido se puede comparar contra los estadísticos RMSE de los modelos regresión múltiple y árbol de regresión tanto de *Python* y de *R* , se puede interpretar cuál modelo es más eficiente en términos de este estadístico con estos datos.
 
