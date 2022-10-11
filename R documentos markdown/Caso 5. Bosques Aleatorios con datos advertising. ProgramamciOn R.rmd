@@ -30,7 +30,7 @@ Crear y evaluar un modelo de arboles aleatotios (*random forest)* para predecir 
 
 # Fundamento teórico
 
-Extraído de : [@amatrodrigo2017]
+Extraído de : [@amatrodrigo2017] [@amatrodrigo2017]
 
 Un modelo **Random Forest** está formado por un conjunto (*ensemble*) de árboles de decisión individuales, cada uno entrenado con una muestra aleatoria extraída de los datos de entrenamiento originales mediante [bootstrapping](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)). Esto implica que cada árbol se entrena con unos datos ligeramente distintos.
 
@@ -113,6 +113,10 @@ Los métodos de *random forest* y *bagging* siguen el mismo algoritmo con la ún
 Sin embargo, la mejor forma para encontrar el valor óptimo de mm es evaluar el *out-of-bag-error* o recurrir a validación cruzada.
 
 Al igual que ocurre con *bagging*, *random forest* no sufre problemas de *overfit* por aumentar el número de árboles creados en el proceso. Alcanzado un determinado número, la reducción del error de test se estabiliza.
+
+Por otra parte como lo menciona [@veloso2019] la mejor formar de evaluar los datos podría ser utilizar diversos arboles de decisión para regresión, así hacer una mejor predicción calculando el promedio de sus predicciones, este enfoque se denomina como algoritmos de ensamble o *ensemble learning*.
+
+De este algoritmo se pudiera decir, que une múltiples árboles de decision, así crea un bosque de predicción, las evalúa y entrega el resultado promedio. [@veloso2019]
 
 # Desarrollo
 
@@ -227,8 +231,10 @@ kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 reg
 
 ## Construir el modelo
 
+La función *randomForest* construye el modelo, el argumento *importance* identifica el impacto de importancia de cada variable independiente sobre la variable dependiente, el argumento *ntree* establece la cantidad de árboles a construir.
+
 ```{r}
-modelo_rf <- randomForest(x = datos.entrenamiento[,1:4], y = datos.entrenamiento[,5], xtest = datos.validacion[,1:4], ytest = datos.validacion[,5], importance = TRUE, keep.forest = TRUE)
+modelo_rf <- randomForest(x = datos.entrenamiento[,1:4], y = datos.entrenamiento[,5], xtest = datos.validacion[,1:4], ytest = datos.validacion[,5], importance = TRUE, keep.forest = TRUE, ntree=40)
 modelo_rf
 ```
 
