@@ -234,7 +234,7 @@ kable(tail(datos.validacion, 20), caption = "Datos de validació últimos 20 reg
 La función *randomForest* construye el modelo, el argumento *importance* identifica el impacto de importancia de cada variable independiente sobre la variable dependiente, el argumento *ntree* establece la cantidad de árboles a construir.
 
 ```{r}
-modelo_rf <- randomForest(x = datos.entrenamiento[,1:4], y = datos.entrenamiento[,5], xtest = datos.validacion[,1:4], ytest = datos.validacion[,5], importance = TRUE, keep.forest = TRUE, ntree=40)
+modelo_rf <- randomForest(x = datos.entrenamiento[,1:4], y = datos.entrenamiento[,5], xtest = datos.validacion[,1:4], ytest = datos.validacion[,5], importance = TRUE, keep.forest = TRUE, ntree=50)
 modelo_rf
 ```
 
@@ -285,7 +285,7 @@ rmse <- rmse(comparaciones$reales, comparaciones$predicciones)
 rmse
 ```
 
-Con este modelo de árbol de regresión, los mismos datos, mismas particiones se tuvo un valor de 1.603962 por lo que se puede interpretar que este modelo de regresión no fue tan bueno como el modelo de árboles de regresión con un valor de *rmse* igual a 1.45568.
+Con este modelo de bosque aleatorio, con los mismos datos, de entrenamiento y validación con 50 árboles simulados en el modelo, se tuvo un valor de 1.5667 en *RMSE*, por lo que se puede interpretar que este modelo de regresión no fue tan bueno como el modelo de árboles de regresión con un valor de *rmse* igual a 1.45568.
 
 Este valor se compara contra otros modelos y en términos de variación con respecto a los valores reales es mas eficiente aquel modelo que se acerca a 0.
 
