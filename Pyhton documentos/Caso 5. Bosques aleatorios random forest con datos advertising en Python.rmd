@@ -1,0 +1,313 @@
+---
+title: "Caso 5. Bosques aleatorios random forest con datos advertising en Python"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Crear y evaluar un modelo de arboles aleatotios (random forest) para predecir las ventas con datos simulados de una empresa dependiendo de las inversiones realizadas en publicidad.
+
+# Descripción
+
+-   Se utiliza programación Python
+
+-   Cargar librerías y datos
+
+-   Limpiar datos si es necesario
+
+-   Explorar datos
+
+-   Partir los datos en datos de entrenamiento y datos de validación 70% y 30%
+
+-   Crear modelo de regresión con los datos de entrenamiento
+
+-   Predicciones
+
+-   Evaluar predicciones con respecto a datos reales
+
+-   Determinar el estadístico *rmse* para evaluar con respecto a otros modelos
+
+-   Interpretar el caso
+
+# Fundamento teórico
+
+Extraído de : [@amatrodrigo2017]
+
+Un modelo Random Forest está formado por un conjunto (ensemble) de árboles de decisión individuales, cada uno entrenado con una muestra aleatoria extraída de los datos de entrenamiento originales mediante bootstrapping. Esto implica que cada árbol se entrena con unos datos ligeramente distintos.
+
+En cada árbol individual, las observaciones se van distribuyendo por bifurcaciones (nodos) generando la estructura del árbol hasta alcanzar un nodo terminal. La predicción de una nueva observación se obtiene agregando las predicciones de todos los árboles individuales que forman el modelo.
+
+Para entender cómo funcionan los modelos Random Forest es necesario conocer primero los conceptos de ensemble y bagging.
+
+Métodos de ensemble
+
+Todos los modelos de aprendizaje estadístico y machine learning sufren el problema de equilibrio entre bias y varianza.
+
+El término bias (sesgo) hace referencia a cuánto se alejan en promedio las predicciones de un modelo respecto a los valores reales. Refleja cómo de capaz es el modelo de aprender la relación real que existe entre los predictores y la variable respuesta. Por ejemplo, si la relación sigue un patrón no lineal, por muchos datos de los que se disponga, un modelo de regresión lineal no podrá modelar correctamente la relación, por lo que tendrá un bias alto.
+
+El término varianza hace referencia a cuánto cambia el modelo dependiendo de los datos utilizados en su entrenamiento. Idealmente, un modelo no debería modificarse demasiado por pequeñas variaciones en los datos de entrenamiento, si esto ocurre, es porque el modelo está memorizando los datos en lugar de aprender la verdadera relación entre los predictores y la variable respuesta. Por ejemplo, un modelo de árbol con muchos nodos, suele variar su estructura con que apenas cambien unos pocos datos de entrenamiento, tiene mucha varianza.
+
+A medida que aumenta la complejidad de un modelo, este dispone de mayor flexibilidad para adaptarse a las observaciones, reduciendo así el bias y mejorando su capacidad predictiva. Sin embargo, alcanzado un determinado grado de flexibilidad, aparece el problema de overfitting, el modelo se ajusta tanto a los datos de entrenamiento que es incapaz de predecir correctamente nuevas observaciones. El mejor modelo es aquel que consigue un equilibrio óptimo entre bias y varianza.
+
+¿Cómo se controlan el bias y varianza en los modelos basados en árboles? Por lo general, los árboles pequeños (pocas ramificaciones) tienen poca varianza pero no consiguen representar bien la relación entre las variables, es decir, tienen bias alto. En contraposición, los árboles grandes se ajustan mucho a los datos de entrenamiento, por lo que tienen muy poco bias pero mucha varianza. Una forma de solucionar este problema son los métodos de ensemble.
+
+Los métodos de ensemble combinan múltiples modelos en uno nuevo con el objetivo de lograr un equilibro entre bias y varianza, consiguiendo así mejores predicciones que cualquiera de los modelos individuales originales. Dos de los tipos de ensemble más utilizados son:
+
+Bagging: Se ajustan múltiples modelos, cada uno con un subconjunto distinto de los datos de entrenamiento. Para predecir, todos los modelos que forman el agregado participan aportando su predicción. Como valor final, se toma la media de todas las predicciones (variables continuas) o la clase más frecuente (variables categóricas). Los modelos Random Forest están dentro de esta categoría.
+
+Boosting: Se ajustan secuencialmente múltiples modelos sencillos, llamados weak learners, de forma que cada modelo aprende de los errores del anterior. Como valor final, al igual que en bagging, se toma la media de todas las predicciones (variables continuas) o la clase más frecuente (variables cualitativas). Tres de los métodos de boosting más empleados son AdaBoost, Gradient Boosting y Stochastic Gradient Boosting.
+
+Aunque el objetivo final es el mismo, lograr un balance óptimo entre bias y varianza, existen dos diferencias importantes:
+
+Forma en que consiguen reducir el error total. El error total de un modelo puede descomponerse como $bias+varianza+ϵ$.
+
+En bagging, se emplean modelos con muy poco bias pero mucha varianza, agregándolos se consigue reducir la varianza sin apenas inflar el bias. En boosting, se emplean modelos con muy poca varianza pero mucho bias, ajustando secuencialmente los modelos se reduce el bias. Por lo tanto, cada una de las estrategias reduce una parte del error total.
+
+Forma en que se introducen variaciones en los modelos que forman el ensemble. En bagging, cada modelo es distinto del resto porque cada uno se entrena con una muestra distinta obtenida mediante bootstrapping. En boosting, los modelos se ajustan secuencialmente y la importancia (peso) de las observaciones va cambiando en cada iteración, dando lugar a diferentes ajustes.
+
+La clave para que los métodos de ensemble consigan mejores resultados que cualquiera de sus modelos individuales es que, los modelos que los forman, sean lo más diversos posibles (sus errores no estén correlacionados). Una analogía que refleja este concepto es la siguiente: supóngase un juego como el trivial en el que los equipos tienen que acertar preguntas sobre temáticas diversas. Un equipo formado por muchos jugadores, cada uno experto en un tema distinto, tendrá más posibilidades de ganar que un equipo formado por jugadores expertos en un único tema o por un único jugador que sepa un poco de todos los temas.
+
+A continuación, se describe con más detalle la estrategia de bagging, sobre la que se fundamenta el modelo Random Forest.
+
+Bagging
+
+El término bagging es el diminutivo de bootstrap aggregation, y hace referencia al empleo del muestreo repetido con reposición bootstrapping con el fin de reducir la varianza de algunos modelos de aprendizaje estadístico, entre ellos los basados en árboles.
+
+Dadas $n$ muestras de observaciones independientes $Z_1, ... Z_n$, cada una con varianza $\sigma^2$, la varianza de la media de las observaciones $\bar{Z}$ es $\sigma^2 / n$.
+
+En otras palabras, promediando un conjunto de observaciones se reduce la varianza.
+
+Basándose en esta idea, una forma de reducir la varianza y aumentar la precisión de un método predictivo es obtener múltiples muestras de la población, ajustar un modelo distinto con cada una de ellas, y hacer la media (la moda en el caso de variables cualitativas) de las predicciones resultantes.
+
+Como en la práctica no se suele tener acceso a múltiples muestras, se puede simular el proceso recurriendo a bootstrapping, generando así pseudo-muestras con los que ajustar diferentes modelos y después agregarlos. A este proceso se le conoce como bagging y es aplicable a una gran variedad de métodos de regresión.
+
+En el caso particular de los árboles de decisión, dada su naturaleza de bajo bias y alta varianza, bagging ha demostrado tener muy buenos resultados. La forma de aplicarlo es:
+
+Generar BB pseudo-training sets mediante bootstrapping a partir de la muestra de entrenamiento original.
+
+Entrenar un árbol con cada una de las BB muestras del paso
+
+Cada árbol se crea sin apenas restricciones y no se somete a pruning, por lo que tiene varianza alta pero poco bias. En la mayoría de casos, la única regla de parada es el número mínimo de observaciones que deben tener los nodos terminales. El valor óptimo de este hiperparámetro puede obtenerse comparando el out of bag error o por validación cruzada.
+
+Para cada nueva observación, obtener la predicción de cada uno de los BB árboles. El valor final de la predicción se obtiene como la media de las BB predicciones en el caso de variables cuantitativas y como la clase predicha más frecuente (moda) para variables cualitativas.
+
+En el proceso de bagging, el número de árboles creados no es un hiperparámetro crítico en cuanto a que, por mucho que se incremente el número, no se aumenta el riesgo de overfitting. Alcanzado un determinado número de árboles, la reducción de test error se estabiliza. A pesar de ello, cada árbol ocupa memoria, por lo que no conviene almacenar más de los necesarios.
+
+Entrenamiento de Random Forest
+
+El algoritmo de Random Forest es una modificación del proceso de bagging que consigue mejorar los resultados gracias a que decorrelaciona aún más los árboles generados en el proceso.
+
+Recordando el apartado anterior, los beneficios del bagging se basan en el hecho de que, promediando un conjunto de modelos, se consigue reducir la varianza. Esto es cierto siempre y cuando los modelos agregados no estén correlacionados. Si la correlación es alta, la reducción de varianza que se puede lograr es pequeña.
+
+Suponendo un set de datos en el que hay un predictor muy influyente, junto con otros moderadamente influyentes. En este escenario, todos o casi todos los árboles creados en el proceso de bagging estarán dominados por el mismo predictor y serán muy parecidos entre ellos. Como consecuencia de la alta correlación entre los árboles, el proceso de bagging apenas conseguirá disminuir la varianza y, por lo tanto, tampoco mejorar el modelo.
+
+Random forest evita este problema haciendo una selección aleatoria de mm predictores antes de evaluar cada división. De esta forma, un promedio de $(p−m)/p$ divisiones no contemplarán el predictor influyente, permitiendo que otros predictores puedan ser seleccionados. Añadiendo este paso extra se consigue decorrelacionar los árboles todavía más, con lo que su agregación consigue una mayor reducción de la varianza.
+
+Los métodos de random forest y bagging siguen el mismo algoritmo con la única diferencia de que, en random forest, antes de cada división, se seleccionan aleatoriamente m predictores. La diferencia en el resultado dependerá del valor m escogido. Si $m=p$ los resultados de random forest y bagging son equivalentes. Algunas recomendaciones son:
+
+La raíz cuadrada del número total de predictores para problemas de clasificación. $m \approx \sqrt{p}$
+
+Un tercio del número de predictores para problemas de regresión $m \approx \frac{p}{3}$.
+
+Si los predictores están muy correlacionados, valores pequeños de $m$ consiguen mejores resultados.
+
+Sin embargo, la mejor forma para encontrar el valor óptimo de mm es evaluar el out-of-bag-error o recurrir a validación cruzada.
+
+Al igual que ocurre con bagging, random forest no sufre problemas de overfit por aumentar el número de árboles creados en el proceso. Alcanzado un determinado número, la reducción del error de test se estabiliza.
+
+Por otra parte como lo menciona mejor formar de evaluar los datos podría ser utilizar diversos arboles de decisión, así hacer una mejor predicción calculando el promedio de sus predicciones, este enfoque se denomina como algoritmos de ensamble o ensemble learning.
+
+De este algoritmo se pudiera decir, que une multiples arboles de decision, así crea un bosque de predicción, las evalúa y entrega el resultado promedio. [@veloso2019]
+
+# Desarrollo
+
+Para trabajar con código Python, se deben cargan las librerías de *Python* previamente instaladas con la función *py_install()* de la librería *reticulate* de R.
+
+La función *repl_python()* se utilizar para ejecutar ventana de comando o *shell* de *Python.*
+
+Se recomienda instalar estos paquetes de *Python*
+
+-   *py_install(packages = "pandas")*
+
+-   *py_install(packages = "matplotlib")*
+
+-   *py_install(packages = "numpy")*
+
+-   *py_install(packages = "sklearn") en R cloud*
+
+-   *py_install("scikit-learn") R Studio local*
+
+-   *py_install(packages = "statsmodels.api")*
+
+-   *py_install(packages = "seaborn")*
+
+-   En terminal de Python se puede actualizar con *conda create -n py3.8 python=3.8 scikit-learn pandas numpy matplotlib*
+
+## Cargar librerías
+
+```{r warning=FALSE, message=FALSE}
+library(reticulate)
+```
+
+```{python}
+# Tratamiento de datos
+import numpy as np
+import pandas as pd
+# Gráficos
+import matplotlib.pyplot as plt
+# Preprocesado y moYdelado
+from sklearn.model_selection import train_test_split
+# from sklearn.tree import DecisionTreeRegressor
+# from sklearn.tree import plot_tree
+# from sklearn.tree import export_graphviz
+# from sklearn.tree import export_text
+# from sklearn.model_selection import GridSearchCV
+
+from sklearn.ensemble import RandomForestRegressor
+
+from sklearn import metrics
+from sklearn.metrics import mean_squared_error, r2_score
+```
+
+## Cargar datos
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/Advertising_Web.csv")
+datos
+```
+
+## Explorar datos
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+```{python}
+datos.info()
+```
+
+Se describen las variables independientes: TV, Radio Newpaper y la variable dependiente Sales.
+
+Valor de etiqueta o variable objetivo deendiente(ventas): que significa el volumen de ventas del producto correspondiente
+
+Las variables independientes: (TV, Radio, Periódico, WEB):
+
+-   TV: son los costos de la publicidad en TV (en miles)
+
+-   Radio: costos de publicidad invertidos en medios de difusión radio;
+
+-   Newspaper Periódico: costos publicitarios para medios impresos.
+
+-   Web: Costos de publicidad invertidos en herramientas digitales.
+
+## Limpiar datos
+
+Quitar las primeras columnas y dejar TV Radio NewsPaper Web y Sales
+
+```{python}
+datos = datos[['TV','Radio', 'Newspaper', 'Web', 'Sales']]
+datos.describe()
+```
+
+```{python}
+datos
+```
+
+## Datos de entrenamiento y datos de validación
+
+Se utiliza semilla 2022 (*random_state=2022*)
+
+La función *train_test_split()* parte los datos originales el 70% y 30% para datos de entrenamiento y validación y con el argumento *datos.drop(columns = "Sales"), datos['Sales']* solo incluye las variables independientes; la semilla de aleatoriedad es 2022.
+
+```{python}
+X_entrena, X_valida, Y_entrena, Y_valida = train_test_split(datos.drop(columns = "Sales"), datos['Sales'],train_size=.70,  random_state=2022)
+```
+
+### Datos de entrenamiento
+
+```{python}
+print("Estructura de datos de entrenamiento... ", X_entrena.shape)
+print(X_entrena)
+print(X_entrena[['TV']], X_entrena[['Radio']], X_entrena[['Newspaper']], X_entrena[['Web']])
+```
+
+## Modelo de Random Forest
+
+Se crea el modelo con la función *RandomForestRegressor().fit()* con los datos de entrenamiento que contiene la variables independientes en relación a la variable dependiente '*Sales*'
+
+```{python}
+model_rf = RandomForestRegressor().fit(X_entrena, Y_entrena)
+```
+
+## Construir predicciones
+
+Se generan predicciones con los datos de validación
+
+```{python}
+predicciones = model_rf.predict(X_valida)
+```
+
+## Construir matriz de comparación
+
+Construir una conjunto de datos con los valores reales de los datos de validación y las predicciones generadas del modelo.
+
+```{python}
+comparaciones = pd.DataFrame(Y_valida)
+
+# comparaciones = comparaciones.assign(Sales_Real = Y_valida)
+
+comparaciones = comparaciones.assign(Predicho = predicciones.flatten().tolist())
+
+print(comparaciones)
+```
+
+## Evaluación del modelo con RMSE
+
+Este valor normalmente se compara contra otro modelo y el que esté mas cerca de cero es mejor.
+
+La raiz del Error Cuadrático Medio (rmse) es una métrica que dice qué tan lejos están los valores predichos de los valores observados o reales en un análisis de regresión, en promedio. Se calcula como:
+
+$$
+rmse = \sqrt{\frac{\sum(predicho_i - real_i)^{2}}{n}}
+$$
+
+RMSE es una forma útil de ver qué tan bien un modelo de regresión puede ajustarse a un conjunto de datos.
+
+Cuanto mayor sea el *rmse*, mayor será la diferencia entre los valores predichos y reales, lo que significa que peor se ajusta un modelo de regresión a los datos. Por el contrario, cuanto más pequeño sea el *rmse*, mejor podrá un modelo ajustar los datos.
+
+Se compara este valor de *rmse* con respecto al modelo de regresión múltiple
+
+```{python}
+rmse = mean_squared_error(
+        y_true  = Y_valida,
+        y_pred  = predicciones,
+        squared = False
+       )
+print(f"El error (rmse) de test es: {rmse}")
+```
+
+```{python}
+print('Mean Squared Error: MSE', metrics.mean_squared_error(Y_valida, predicciones))
+```
+
+```{python}
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones)))
+```
+
+Para estos datos para estos valores de entrenamiento y validación, el valor de RMSE es aproximadamente 0.75, menor que el valor de árbol de regresión en *Python* del Caso 4.
+
+El RMSE obtenido se puede comparar contra los estadísticos RMSE de los modelos regresión múltiple y árbol de regresión tanto de *Python* y de *R* , se puede interpretar cuál modelo es más eficiente en términos de este estadístico con estos datos.
+
+# Bibliografía
