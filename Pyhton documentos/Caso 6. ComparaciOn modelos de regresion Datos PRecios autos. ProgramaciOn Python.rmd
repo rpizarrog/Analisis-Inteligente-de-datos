@@ -1,5 +1,6 @@
 ---
 title: "Caso 6. Comparación modelos de regresión. Datos Precios autos. Programamción Python"
+author: "Rubén Pizarro Gurrola"
 date: "`r Sys.Date()`"
 output: 
   html_document:
