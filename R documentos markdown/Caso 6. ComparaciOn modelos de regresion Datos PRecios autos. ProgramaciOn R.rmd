@@ -1,0 +1,381 @@
+---
+title: "Caso 6. Comparación modelos de regresión. Datos PRecios autos. Programamción R"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Comparar modelos de supervisados a través de la aplicación de algoritmos de predicción de precios de automóviles determinando el estadístico del error cuadrático medio (*rmse*).
+
+# Descripción
+
+-   Se cargan los datos previamente preparados de la dirección <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment_Numericas_Preparado.csv>
+
+-   Se crean datos de entrenamiento al 80%
+
+-   Se crean datos de validación al 20%
+
+-   Se crea el modelo regresión múltiple con datos de entrenamiento
+
+    -   Con este modelo se responde a preguntas tales como:
+
+        -   ¿cuáles son variables que están por encima del 90% de confianza como predictores?,
+
+        -   ¿Cuál es el valor de *R Square Adjusted* o que tanto representan las variables dependientes al precio del vehículo?
+
+    -   Se generan predicciones con datos de validación
+
+    -   Se determina el estadístico *RMSE* para efectos de comparación
+
+-   Se crea el modelo árboles de regresión con los datos de entrenamiento
+
+    -   Se identifica la importancia de las variables sobre el precio
+
+    -   Se visualiza el árbol de regresión y sus reglas de asociación
+
+-   Se hacen predicciones con datos de validación
+
+-   Se determinar el estadístico *RMSE* para efectos de comparación
+
+-   Se construye el modelo bosques aleatorios con datos de entrenamiento y con 20 árboles simulados
+
+    -   Se identifica la importancia de las variables sobre el precio
+
+    -   Se generan predicciones con datos de validación
+
+    -   Se determina el estadístico RMSE para efectos de comparación
+
+-   Al final del caso, se describe una interpretación personal
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r warning=FALSE, message=FALSE}
+# Librerías
+library(readr)
+library(PerformanceAnalytics) # Para correlaciones gráficas
+library(dplyr)
+library(knitr) # Para datos tabulares
+library(kableExtra) # Para datos tabulares amigables
+library(ggplot2) # Para visualizar
+library(plotly) # Para visualizar
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+
+library(rpart) # Para árbol
+library(rpart.plot) # Para árbol
+
+library(randomForest) # Para random forest
+library(caret) # Para hacer divisiones o particiones
+library(reshape)    # Para renombrar columnas
+```
+
+## Cargar datos
+
+```{r}
+datos <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment_Numericas_Preparado.csv")
+```
+
+### Exploración de datos
+
+```{r}
+str(datos)
+```
+
+### Diccionario de datos
+
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| Col     | Nombre                 | Descripción                                                                                                                            |
++=========+========================+========================================================================================================================================+
+| 1       | *Symboling*            | *Its assigned insurance risk rating, A value of +3 indicates that the auto is risky, -3 that it is probably pretty safe.(Categorical)* |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 2       | *wheelbase*            | *Weelbase of car (Numeric). Distancia de ejes en pulgadas.*                                                                            |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 3       | *carlength*            | *Length of car (Numeric). Longitud*                                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 4       | *carwidth*             | *Width of car (Numeric). Amplitud*                                                                                                     |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 5       | *carheight*            | *height of car (Numeric). Altura*                                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 6       | *curbweight*           | *The weight of a car without occupants or baggage. (Numeric). Peso del auto*                                                           |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *7*     | *enginesize*           | *Size of car (Numeric). Tamaño del carro en ...*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 8       | *boreratio*            | *Boreratio of car (Numeric). Eficiencia de motor*                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *9*     | *stroke*               | *Stroke or volume inside the engine (Numeric). Pistones, tiempos, combustión*                                                          |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *1*0    | *compressionratio*     | *compression ratio of car (Numeric). Comprensión o medición de presión en motor*                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 11      | *horsepower*           | *Horsepower (Numeric). Poder del carro*                                                                                                |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 12      | *peakrpm*              | *car peak rpm (Numeric). Picos de revoluciones por minuto*                                                                             |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 13      | *citympg*              | *Mileage in city (Numeric). Consumo de gasolina*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 14      | *highwaympg*           | *Mileage on highway (Numeric). Consumo de gasolina*                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| 16      | *price*                | *Price of car (Numeric). Precio del carro en dólares*                                                                                  |
+|         |                        |                                                                                                                                        |
+|         | *(Dependent variable)* |                                                                                                                                        |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+
+~**Fuente**: <https://archive.ics.uci.edu/ml/datasets/Automobile>~
+
+### Primeros (10) registros
+
+```{r}
+kable(head(datos, 10), caption = "Datos de precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+### Datos de entrenamiento y validación
+
+Datos de entrenamiento al 80% de los datos y 20% los datos de validación.
+
+```{r}
+n <- nrow(datos)
+set.seed(2022) # Semilla
+entrena <- createDataPartition(y = datos$price, p = 0.80, list = FALSE, times = 1)
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+#### Datos de entrenamiento
+
+```{r}
+kable(head(datos.entrenamiento, 10), caption = "Datos de Entrenamient. Precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### Datos de validación
+
+```{r}
+kable(head(datos.validacion, 10), caption = "Datos de Validación. Precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+## Modelos Supervisados
+
+### Modelo de regresión lineal múltiple. (RM)
+
+Se construye el modelo de regresión lineal múltiple (rm)
+
+```{r}
+# Modelo de regresión lineal múltiple para observar variables de importancia
+modelo_rm <- lm(formula = price ~ symboling +  wheelbase + carlength + carwidth + carheight + curbweight + enginesize + boreratio + stroke + compressionratio + horsepower + peakrpm + citympg + highwaympg , 
+                data = datos.entrenamiento)
+
+
+```
+
+```{r}
+summary(modelo_rm)
+```
+
+-   ¿cuáles son variables que están por encima del 90% de confianza como predictores?
+
+-   El coeficiente de intersección tiene un nivel de confianza del 95%.
+
+    Las variables *wheelbase, carwidth* y *citympg* tienen un nivel de confianza del 90% (.)
+
+-   Las variable *compressionratio* tiene un nivel de confianza del 95% (\*)
+
+-   Las variables *stroke y peakrpm* tienen un nivel de confianza como predictores del 99% (\*\*)
+
+-   La variable *enginesize* tiene un nivel de confianza como predictor del 99.9% (\*\*\*)
+
+-   ¿Cuál es el valor de *R Square Adjusted* o que tanto representan las variables dependientes al precio del vehículo?
+
+-   En modelos lineales múltiples el estadístico *Adjusted R-squared*: 0.8351 significa que las variables independientes explican aproximadamente el 83.51% de la variable dependiente precio.
+
+#### Predicciones del modelo rm
+
+```{r}
+predicciones_rm <- predict(object = modelo_rm, newdata = datos.validacion)
+predicciones_rm
+
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_rm)
+
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Regresión Lineal Múltiple. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de rm
+
+```{r}
+rmse_rm <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_rm
+```
+
+### Modelo de árbol de regresión (AR)
+
+Se construye el modelo de árbol de regresión (ar)
+
+```{r}
+modelo_ar <- rpart(formula = price ~ symboling +  wheelbase + carlength + carwidth + carheight + curbweight + enginesize + boreratio + stroke + compressionratio + horsepower + peakrpm + citympg + highwaympg , 
+                data = datos.entrenamiento )
+
+
+modelo_ar
+
+```
+
+#### Variables de importancia
+
+Pendiente
+
+#### Visualización de árbol de regresión
+
+```{r}
+rpart.plot(modelo_ar)
+```
+
+#### Predicciones del modelo (ar)
+
+```{r}
+predicciones_ar <- predict(object = modelo_ar, newdata = datos.validacion)
+predicciones_ar
+
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_ar)
+
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Arbol de regresión. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de ar
+
+```{r}
+rmse_ar <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_ar
+```
+
+### Modelo de bosques aleatorios (RF)
+
+Se construye el modelo de árbol de regresión (ar)
+
+```{r}
+
+modelo_rf <- randomForest(x = datos.entrenamiento[,c("symboling", "wheelbase",
+                                "carlength", "carwidth", "carheight", "curbweight",
+                                "enginesize", "boreratio", "stroke",
+                                "compressionratio", "horsepower", "peakrpm",
+                                "citympg", "highwaympg" )], 
+                          y = datos.entrenamiento[,'price'], 
+                          importance = TRUE, 
+                          keep.forest = TRUE, 
+                          ntree=20)
+modelo_rf
+
+```
+
+#### Variables de importancia
+
+```{r}
+as.data.frame(modelo_rf$importance) %>%
+    arrange(desc(IncNodePurity))
+
+```
+
+#### Predicciones del modelo (rf)
+
+```{r}
+predicciones_rf <- predict(object = modelo_rf, newdata = datos.validacion)
+predicciones_rf
+
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_rf)
+
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Random Forest. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de ar
+
+```{r}
+rmse_rf <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_rf
+```
+
+## Evaluación de modelos
+
+Se comparan las predicciones
+
+```{r}
+comparaciones <- data.frame(cbind(datos.validacion[,-1], predicciones_rm, predicciones_ar, predicciones_rf))
+```
+
+Se visualizan las predicciones de cada modelo
+
+```{r}
+kable(comparaciones, caption = "Predicciones de los modelos") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+Se compara el RMSE
+
+```{r}
+rmse <- data.frame(rm = rmse_rm, ar = rmse_ar, rf = rmse_rf)
+
+```
+
+```{r}
+kable(rmse, caption = "Estadístico RMSE de cada modelo") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+# Interpretación
+
+Se cargaron datos numéricos de precios de automóviles basados en algunas variables numéricas.
+
+El modelo de regresión linea múltiple destaca variables estadísticamente significativas: Las variable *compressionratio* tiene un nivel de confianza del 95%; las variables *stroke y peakrpm* tienen un nivel de confianza como predictores del 99% y la variable *enginesize* tiene un nivel de confianza como predictor del 99.9%.
+
+El modelo de árbol de regresión sus variables de importancia fueron: *enginesize, highwaympg, curbweight* y *horsepower*.
+
+El modelo de bosque aleatorio considera variables de importancia tales como: e*nginesize, curbweight, horsepower, citympg y carwidth.*
+
+A destacar la variable *enginesize* en todos los modelos como importante y significativa y las variables *enginesize,* *curbweight* y *horsepower* como importantes en los modelos árbol de regresión y bosque aleatorio.
+
+El mejor modelo conforme al estadístico raiz del error cuadrático medio (*rmse*) fue el de bosques aleatorios con estos datos de entrenamiento y validación y con el porcentaje de datos de entrenamiento y validación de 80% y 20%.
