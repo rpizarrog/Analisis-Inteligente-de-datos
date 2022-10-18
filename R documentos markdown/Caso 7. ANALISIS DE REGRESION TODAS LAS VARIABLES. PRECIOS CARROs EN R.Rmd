@@ -1,0 +1,265 @@
+---
+title: "Caso 7"
+author: "Rubén Pizarro Gurrola"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Comparar modelos de supervisados a través de la aplicación de algoritmos de predicción de precios de automóviles determinando el estadístico del error cuadrático medio (rmse).
+
+# Descripción
+
+Se cargan los datos previamente preparados de la dirección <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment.csv>
+
+Participan todas las variables del conjunto de datos.
+
+Se crean datos de entrenamiento al 80%
+
+Se crean datos de validación al 20%
+
+Se crea el modelo regresión múltiple con datos de entrenamiento
+
+Con este modelo se responde a preguntas tales como:
+
+¿cuáles son variables que están por encima del 90% de confianza como predictores?,
+
+¿Cuál es el valor de R Square Adjusted o que tanto representan las variables dependientes al precio del vehículo?
+
+Se generan predicciones con datos de validación
+
+Se determina el estadístico RMSE para efectos de comparación
+
+Se crea el modelo árboles de regresión con los datos de entrenamiento
+
+Se identifica la importancia de las variables sobre el precio
+
+Se visualiza el árbol de regresión y sus reglas de asociación
+
+Se hacen predicciones con datos de validación
+
+Se determinar el estadístico RMSE para efectos de comparación
+
+Se construye el modelo bosques aleatorios con datos de entrenamiento y con 20 árboles simulados
+
+Se identifica la importancia de las variables sobre el precio
+
+Se generan predicciones con datos de validación
+
+Se determina el estadístico RMSE para efectos de comparación
+
+Al final del caso, se describe una interpretación personal
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r warning=FALSE, message=FALSE}
+# Librerías
+library(readr)
+library(PerformanceAnalytics) # Para correlaciones gráficas
+library(dplyr)
+library(knitr) # Para datos tabulares
+library(kableExtra) # Para datos tabulares amigables
+library(ggplot2) # Para visualizar
+library(plotly) # Para visualizar
+library(caret)  # Para particionar
+library(Metrics) # Para determinar rmse
+
+library(rpart) # Para árbol
+library(rpart.plot) # Para árbol
+
+library(randomForest) # Para random forest
+library(caret) # Para hacer divisiones o particiones
+library(reshape)    # Para renombrar columnas
+```
+
+## Cargar datos
+
+```{r}
+datos <-  read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment.csv", 
+                   fileEncoding = "UTF-8", 
+                   stringsAsFactors = TRUE)
+```
+
+## Exploración de datos
+
+Hay 205 observaciones y 26 variables de las cuales se eligen las variables numéricas.
+
+```{r}
+str(datos)
+```
+
+```{r}
+kable(head(datos, 10), caption = "Datos de precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+### Diccionario de datos
+
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| Col     | Nombre                 | Descripción                                                                                                                            |
++=========+========================+========================================================================================================================================+
+| *1*     | *Car_ID*               | *Unique id of each observation (Interger)*                                                                                             |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *2*     | *Symboling*            | *Its assigned insurance risk rating, A value of +3 indicates that the auto is risky, -3 that it is probably pretty safe.(Categorical)* |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *3*     | *carCompany*           | *Name of car company (Categorical)*                                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *4*     | *fueltype*             | *Car fuel type i.e gas or diesel (Categorical)*                                                                                        |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *5*     | *aspiration*           | *Aspiration used in a car (Categorical) (Std o Turbo)*                                                                                 |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *6*     | *doornumber*           | *Number of doors in a car (Categorical). Puertas*                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *7*     | *carbody*              | *body of car (Categorical). (convertible, sedan, wagon ...)*                                                                           |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *8*     | *drivewheel*           | *type of drive wheel (Categorical). (hidráulica, manual, )*                                                                            |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *9*     | *enginelocation*       | *Location of car engine (Categorical). Lugar del motor*                                                                                |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *10*    | *wheelbase*            | *Weelbase of car (Numeric). Distancia de ejes en pulgadas.*                                                                            |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *11*    | *carlength*            | *Length of car (Numeric). Longitud*                                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *12*    | *carwidth*             | *Width of car (Numeric). Amplitud*                                                                                                     |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *13*    | *carheight*            | *height of car (Numeric). Altura*                                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *14*    | *curbweight*           | *The weight of a car without occupants or baggage. (Numeric). Peso del auto*                                                           |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *15*    | *enginetype*           | *Type of engine. (Categorical). Tipo de motor*                                                                                         |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *16*    | *cylindernumber*       | *cylinder placed in the car (Categorical). Cilindraje*                                                                                 |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *17*    | *enginesize*           | *Size of car (Numeric). Tamaño del carro en ...*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *18*    | *fuelsystem*           | *Fuel system of car (Categorical)*                                                                                                     |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *19*    | *boreratio*            | *Boreratio of car (Numeric). Eficiencia de motor*                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *20*    | *stroke*               | *Stroke or volume inside the engine (Numeric). Pistones, tiempos, combustión*                                                          |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *21*    | *compressionratio*     | *compression ratio of car (Numeric). Comprensión o medición de presión en motor*                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *22*    | *horsepower*           | *Horsepower (Numeric). Poder del carro*                                                                                                |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *23*    | *peakrpm*              | *car peak rpm (Numeric). Picos de revoluciones por minuto*                                                                             |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *24*    | *citympg*              | *Mileage in city (Numeric). Consumo de gasolina*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *25*    | *highwaympg*           | *Mileage on highway (Numeric). Consumo de gasolina*                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *26*    | *price*                | *Price of car (Numeric). Precio del carro en dólares*                                                                                  |
+|         |                        |                                                                                                                                        |
+|         | *(Dependent variable)* |                                                                                                                                        |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+
+~**Fuente**: <https://archive.ics.uci.edu/ml/datasets/Automobile>~
+
+## Preparar los datos
+
+Quitar variables que no reflejan algún interés estadístico es decir, quitar la columnas 1 y 3, car_ID y CarName
+
+```{r}
+datos <- datos[, c(2,4:26)]
+
+
+```
+
+Nuevamente los primeros registros
+
+```{r}
+kable(head(datos, 10), caption = "Datos de precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+
+### Datos de entrenamiento y validación
+
+Datos de entrenamiento al 80% de los datos y 20% los datos de validación.
+
+```{r}
+n <- nrow(datos)
+set.seed(2022) # Semilla
+entrena <- createDataPartition(y = datos$price, p = 0.80, list = FALSE, times = 1)
+# Datos entrenamiento
+datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
+# Datos validación
+datos.validacion <- datos[-entrena, ]
+```
+
+#### Datos de entrenamiento
+
+```{r}
+kable(head(datos.entrenamiento, 10), caption = "Datos de Entrenamient. Precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### Datos de validación
+
+```{r}
+kable(head(datos.validacion, 10), caption = "Datos de Validación. Precios de carros") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+## Modelos Supervisados
+
+### Modelo de regresión lineal múltiple. (RM)
+
+Se construye el modelo de regresión lineal múltiple (rm). La variable precio en función de todas las variable independientes incluyendo numéricas y no numéricas.
+
+```{r}
+# Modelo de regresión lineal múltiple para observar variables de importancia
+modelo_rm <- lm(formula = price ~ . , 
+                data = datos.entrenamiento)
+```
+
+```{r}
+summary(modelo_rm)
+```
+
+-   ¿cuáles son variables que están por encima del 90% de confianza como predictores?
+
+-   El coeficiente de intersección tiene un nivel de confianza del 95%.
+
+-   Se observan algunos coeficientes igual o por encima del 90% de confianza
+
+-   En modelos lineales múltiples el estadístico *Adjusted R-squared*: 0.9736 significa que las variables independientes explican aproximadamente el 97.36% de la variable dependiente precio.
+
+#### Predicciones del modelo rm
+
+```{r}
+predicciones_rm <- predict(object = modelo_rm, newdata = datos.validacion)
+predicciones_rm
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_rm)
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Regresión Lineal Múltiple. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de rm
+
+```{r}
+rmse_rm <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_rm
+```
