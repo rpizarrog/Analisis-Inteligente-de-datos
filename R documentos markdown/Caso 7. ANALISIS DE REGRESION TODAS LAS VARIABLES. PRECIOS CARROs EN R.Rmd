@@ -220,8 +220,13 @@ kable(head(datos.validacion, 10), caption = "Datos de Validación. Precios de ca
 
 Se construye el modelo de regresión lineal múltiple (rm). La variable precio en función de todas las variables independientes incluyendo numéricas y no numéricas.
 
+La expresión price ~ . singnifica price ~ symboling + fueltype + aspiration + doornumber + carbody + drivewheel + enginelocation + wheelbase + carlength + carwidth + carheight + curbweight + enginetype + cylindernumber + enginesize + fuelsystem + boreratio + stroke + compressionratio + horsepower + peakrpm + citympg + highwaympg
+
 ```{r}
 # Modelo de regresión lineal múltiple para observar variables de importancia
+
+#modelo_rm <- lm(formula = price ~ symboling + fueltype + aspiration + doornumber + carbody + drivewheel + enginelocation + wheelbase + carlength + carwidth + carheight + curbweight + enginetype + cylindernumber + enginesize + fuelsystem + boreratio + stroke + compressionratio + horsepower + peakrpm + citympg + highwaympg, data = datos.entrenamiento)
+
 modelo_rm <- lm(formula = price ~ . , 
                 data = datos.entrenamiento)
 ```
@@ -235,6 +240,8 @@ summary(modelo_rm)
 -   El coeficiente de intersección tiene un nivel de confianza del 95%.
 
 -   Se observan algunos coeficientes igual o por encima del 90% de confianza
+
+-   Dado que algunos predictores no presentan un nivel de confianza por encima del 90% es posible que se quiera construir un modelo con solo los predictores que presentan niveles de confianza igual o superior del 90%. Es para trabajos futuros, no se hace en este caso.
 
 -   En modelos lineales múltiples el estadístico *Adjusted R-squared*: 0.9736 significa que las variables independientes explican aproximadamente el 97.36% de la variable dependiente precio.
 
@@ -265,3 +272,130 @@ kable(head(comparaciones, 10), caption = "Regresión Lineal Múltiple. Comparaci
 rmse_rm <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
 rmse_rm
 ```
+
+### Modelo de árbol de regresión. (AR)
+
+Se construye el modelo de árbol de regresión (ar)
+
+```{r}
+modelo_ar <- rpart(formula = price ~ symboling + fueltype + aspiration + doornumber + carbody + drivewheel + enginelocation + wheelbase + carlength + carwidth + carheight + curbweight + enginetype + cylindernumber + enginesize + fuelsystem + boreratio + stroke + compressionratio + horsepower + peakrpm + citympg + highwaympg, data = datos.entrenamiento )
+modelo_ar
+```
+
+#### Variables de importancia
+
+Pendiente
+
+#### Visualización de árbol de regresión
+
+```{r}
+rpart.plot(modelo_ar)
+```
+
+#### Predicciones del modelo (ar)
+
+```{r}
+predicciones_ar <- predict(object = modelo_ar, newdata = datos.validacion)
+predicciones_ar
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_ar)
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Arbol de regresión. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de ar
+
+```{r}
+rmse_ar <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_ar
+```
+
+### Modelo de bosques aleatorios (RF)
+
+Se construye el modelo de árbol de regresión (ar)
+
+```{r}
+modelo_rf <- randomForest(x = datos.entrenamiento[,c("symboling", "fueltype", "aspiration", "doornumber", "carbody", "drivewheel", "enginelocation", "wheelbase", "carlength", "carwidth", "carheight", "curbweight", "enginetype", "cylindernumber", "enginesize", "fuelsystem", "boreratio", "stroke", "compressionratio", "horsepower", "peakrpm", "citympg", "highwaympg")], 
+                          y = datos.entrenamiento[,'price'], 
+                          importance = TRUE, 
+                          keep.forest = TRUE, 
+                          ntree=20)
+modelo_rf
+```
+
+#### Variables de importancia
+
+```{r}
+as.data.frame(modelo_rf$importance) %>%
+    arrange(desc(IncNodePurity))
+```
+
+#### Predicciones del modelo (rf)
+
+```{r}
+predicciones_rf <- predict(object = modelo_rf, newdata = datos.validacion)
+predicciones_rf
+```
+
+#### Tabla comparativa
+
+```{r}
+comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_rf)
+```
+
+```{r}
+kable(head(comparaciones, 10), caption = "Random Forest. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+#### RMSE modelo de ar
+
+```{r}
+rmse_rf <- rmse(comparaciones$precio_real, comparaciones$precio_predicciones)
+rmse_rf
+```
+
+## Evaluación de modelos
+
+Se comparan las predicciones
+
+```{r}
+comparaciones <- data.frame(cbind(datos.validacion[,-1], predicciones_rm, predicciones_ar, predicciones_rf))
+```
+
+Se visualizan las predicciones de cada modelo
+
+```{r}
+kable(comparaciones, caption = "Predicciones de los modelos") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+Se compara el RMSE
+
+```{r}
+rmse <- data.frame(rm = rmse_rm, ar = rmse_ar, rf = rmse_rf)
+```
+
+```{r}
+kable(rmse, caption = "Estadístico RMSE de cada modelo") %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "bordered", "condensed")) %>% 
+ kable_paper("hover")
+```
+
+# Interpretación
+
+Se cargaron datos  de precios de automóviles basados en todas variables tanto numéricas como categóricas.
+
+El modelo de regresión linea múltiple destaca algunas variables estadísticamente significativas.
+
+El mejor modelo conforme al estadístico raiz del error cuadrático medio (*rmse*) fue el de bosques aleatorios con estos datos de entrenamiento y validación y con el porcentaje de datos de entrenamiento y validación de 80% y 20%.
