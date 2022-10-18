@@ -190,7 +190,7 @@ Datos de entrenamiento al 80% de los datos y 20% los datos de validación.
 
 ```{r}
 n <- nrow(datos)
-set.seed(2022) # Semilla
+set.seed(2023) # Semilla
 entrena <- createDataPartition(y = datos$price, p = 0.80, list = FALSE, times = 1)
 # Datos entrenamiento
 datos.entrenamiento <- datos[entrena, ]  # [renglones, columna]
@@ -218,7 +218,7 @@ kable(head(datos.validacion, 10), caption = "Datos de Validación. Precios de ca
 
 ### Modelo de regresión lineal múltiple. (RM)
 
-Se construye el modelo de regresión lineal múltiple (rm). La variable precio en función de todas las variable independientes incluyendo numéricas y no numéricas.
+Se construye el modelo de regresión lineal múltiple (rm). La variable precio en función de todas las variables independientes incluyendo numéricas y no numéricas.
 
 ```{r}
 # Modelo de regresión lineal múltiple para observar variables de importancia
@@ -250,6 +250,8 @@ predicciones_rm
 ```{r}
 comparaciones <- data.frame(precio_real = datos.validacion$price,  precio_predicciones = predicciones_rm)
 ```
+
+Al haber usado semilla 2023 y habiendo realizado las pruebas, se concluye que los datos de entrenamiento deben de cubrir y garantizar todas los posibles valores de las variables categóricas en los datos de validación, es decir, no debe haber valores en datos de validación que no se hayan entrenado.
 
 ```{r}
 kable(head(comparaciones, 10), caption = "Regresión Lineal Múltiple. Comparación precios reales VS predicción de precios. 10 primeras predicciones") %>%
