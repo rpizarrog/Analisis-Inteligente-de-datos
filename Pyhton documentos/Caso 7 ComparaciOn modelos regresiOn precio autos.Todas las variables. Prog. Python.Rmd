@@ -1,0 +1,499 @@
+---
+title: "Caso 7 Comparación modelos regresión precio autos.Todas las variables. Prog. Python"
+author: "Rubén Pizarro Gurrola"
+date: "2022-10-19"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+---
+
+# Objetivo
+
+Comparar modelos de supervisados a través de la aplicación de algoritmos de predicción de precios de automóviles determinando el estadístico del error cuadrático medio (rmse).
+
+# Descripción
+
+Se cargan los datos previamente preparados de la dirección <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment.csv>
+
+-   Participan todas las variables del conjunto de datos.
+
+-   Se crean datos de entrenamiento al 80%
+
+-   Se crean datos de validación al 20%
+
+-   Se crea el modelo regresión múltiple con datos de entrenamiento
+
+    -   Con este modelo se responde a preguntas tales como:
+
+    -   ¿cuáles son variables que están por encima del 90% de confianza como predictores?,
+
+    -   ¿Cuál es el valor de R Square Adjusted o que tanto representan las variables dependientes al precio del vehículo?
+
+    -   Se generan predicciones con datos de validación
+
+    -   Se determina el estadístico RMSE para efectos de comparación
+
+-   Se crea el modelo árboles de regresión con los datos de entrenamiento
+
+    -   Se identifica la importancia de las variables sobre el precio
+
+    -   Se visualiza el árbol de regresión y sus reglas de asociación
+
+    -   Se hacen predicciones con datos de validación
+
+    -   Se determinar el estadístico RMSE para efectos de comparación
+
+-   Se construye el modelo bosques aleatorios con datos de entrenamiento y con 20 árboles simulados
+
+    -   Se identifica la importancia de las variables sobre el precio
+
+    -   Se generan predicciones con datos de validación
+
+    -   Se determina el estadístico RMSE para efectos de comparación
+
+-   Al final del caso, se describe una interpretación personal comparando el estadístico RMSE de cada modelo y se menciona cual modelo es mejor predictor.
+
+# Desarrollo
+
+## Cargar librerías
+
+```{python}
+# Tratamiento de datos
+import numpy as np
+import pandas as pd
+
+# Gráficos
+import matplotlib.pyplot as plt
+
+# Preprocesado y moYdelado
+from sklearn.model_selection import train_test_split
+
+# Estadisticos y lineal múltiple
+import statsmodels.api as sm # Estadísticas R Adjused
+import seaborn as sns  # Gráficos
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures # Polinomial
+
+# Arbol de regresion
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import plot_tree
+from sklearn.tree import export_graphviz
+from sklearn.tree import export_text
+from sklearn.model_selection import GridSearchCV
+
+# Random Forest
+from sklearn.ensemble import RandomForestRegressor
+
+
+# Metricas
+from sklearn import metrics
+from sklearn.metrics import mean_squared_error, r2_score
+
+```
+
+## Cargar datos
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/CarPrice_Assignment.csv")
+datos
+```
+
+## Exploración de datos
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+## Diccionario de datos
+
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| Col     | Nombre                 | Descripción                                                                                                                            |
++=========+========================+========================================================================================================================================+
+| *1*     | *Car_ID*               | *Unique id of each observation (Interger)*                                                                                             |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *2*     | *Symboling*            | *Its assigned insurance risk rating, A value of +3 indicates that the auto is risky, -3 that it is probably pretty safe.(Categorical)* |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *3*     | *carCompany*           | *Name of car company (Categorical)*                                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *4*     | *fueltype*             | *Car fuel type i.e gas or diesel (Categorical)*                                                                                        |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *5*     | *aspiration*           | *Aspiration used in a car (Categorical) (Std o Turbo)*                                                                                 |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *6*     | *doornumber*           | *Number of doors in a car (Categorical). Puertas*                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *7*     | *carbody*              | *body of car (Categorical). (convertible, sedan, wagon ...)*                                                                           |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *8*     | *drivewheel*           | *type of drive wheel (Categorical). (hidráulica, manual, )*                                                                            |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *9*     | *enginelocation*       | *Location of car engine (Categorical). Lugar del motor*                                                                                |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *10*    | *wheelbase*            | *Weelbase of car (Numeric). Distancia de ejes en pulgadas.*                                                                            |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *11*    | *carlength*            | *Length of car (Numeric). Longitud*                                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *12*    | *carwidth*             | *Width of car (Numeric). Amplitud*                                                                                                     |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *13*    | *carheight*            | *height of car (Numeric). Altura*                                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *14*    | *curbweight*           | *The weight of a car without occupants or baggage. (Numeric). Peso del auto*                                                           |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *15*    | *enginetype*           | *Type of engine. (Categorical). Tipo de motor*                                                                                         |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *16*    | *cylindernumber*       | *cylinder placed in the car (Categorical). Cilindraje*                                                                                 |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *17*    | *enginesize*           | *Size of car (Numeric). Tamaño del carro en ...*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *18*    | *fuelsystem*           | *Fuel system of car (Categorical)*                                                                                                     |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *19*    | *boreratio*            | *Boreratio of car (Numeric). Eficiencia de motor*                                                                                      |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *20*    | *stroke*               | *Stroke or volume inside the engine (Numeric). Pistones, tiempos, combustión*                                                          |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *21*    | *compressionratio*     | *compression ratio of car (Numeric). Comprensión o medición de presión en motor*                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *22*    | *horsepower*           | *Horsepower (Numeric). Poder del carro*                                                                                                |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *23*    | *peakrpm*              | *car peak rpm (Numeric). Picos de revoluciones por minuto*                                                                             |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *24*    | *citympg*              | *Mileage in city (Numeric). Consumo de gasolina*                                                                                       |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *25*    | *highwaympg*           | *Mileage on highway (Numeric). Consumo de gasolina*                                                                                    |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+| *26*    | *price*                | *Price of car (Numeric). Precio del carro en dólares*                                                                                  |
+|         |                        |                                                                                                                                        |
+|         | *(Dependent variable)* |                                                                                                                                        |
++---------+------------------------+----------------------------------------------------------------------------------------------------------------------------------------+
+
+~**Fuente**: <https://archive.ics.uci.edu/ml/datasets/Automobile>~
+
+## Preparación de datos
+
+### Eliminar variables
+
+Quitar variables que no reflejan algún interés estadístico es decir, quitar la columnas 1 y 3, car_ID y CarName
+
+```{python}
+datos = datos[['symboling','fueltype','aspiration','doornumber','carbody','drivewheel','enginelocation','wheelbase','carlength','carwidth','carheight','curbweight', 'enginetype','cylindernumber','enginesize','fuelsystem','boreratio','stroke','compressionratio','horsepower','peakrpm','citympg','highwaympg', 'price']]
+# datos.describe()
+```
+
+```{python}
+datos
+```
+
+### Construir cariables Dummys
+
+Existen variables que son categóricas: fueltype object aspiration object doornumber object carbody object drivewheel object enginelocation object enginetype object cylindernumber object fuelsystem object
+
+Identificar variables Dummys y construir un conjunto de datos que incluye las variable dummis.
+
+El método de la librería de Pandas llamado *get_dummies()* convierte los datos categóricos en variables indicadoras o ficticias.
+
+¿Qué son las variable dummis?, significa realizar una codificación de una variable categórica para convertirla en varias columnas con el identificador del registro al que corresponde, obteniendo 1 o 0 en el caso de que se cumpla la condición en el registro.
+
+Ejemplo
+
+|  genero   |
+|:---------:|
+| MASCULINO |
+| FEMENINO  |
+| MASCULINO |
+
+Mismos datos con variables dummis
+
+| genero_masculino | genero_femenino |
+|:----------------:|:---------------:|
+|        1         |        0        |
+|        0         |        1        |
+|        1         |        0        |
+
+```{python}
+datos_dummis = pd.get_dummies (datos, drop_first = True)
+datos_dummis
+```
+
+### Datos de entrenamiento y validación
+
+Datos de entrenamiento al 80% de los datos y 20% los datos de validación. Semilla 2022
+
+```{python}
+X_entrena, X_valida, Y_entrena, Y_valida = train_test_split(datos_dummis.drop(columns = "price"), datos_dummis['price'],train_size = 0.80,  random_state = 2022)
+```
+
+#### Datos de entrenamiento
+
+```{python}
+X_entrena
+```
+
+#### Datos de validación
+
+```{python}
+X_valida
+```
+
+## Modelos Supervisados
+
+### Modelo de regresión lineal múltiple. (RM)
+
+Se construye el modelo de regresión lineal múltiple (rm)
+
+```{python}
+modelo_rm = LinearRegression()
+ 
+modelo_rm.fit(X_entrena,Y_entrena)
+```
+
+#### Coeficientes
+
+Solo se muestran los coeficientes de: $\beta_1, \beta_2, ...\beta_n$
+
+```{python}
+modelo_rm.coef_
+
+```
+
+-   En modelos lineales múltiples el estadístico *Adjusted R-squared*: 0.0000 significa que las variables independientes explican aproximadamente el 00.00% de la variable dependiente precio.
+
+```{python}
+print(modelo_rm.score(X_entrena, Y_entrena))
+```
+
+#### Predicciones del modelo rm
+
+```{python}
+predicciones_rm = modelo_rm.predict(X_valida)
+print(predicciones_rm[:-1])
+```
+
+#### Tabla comparativa
+
+```{python}
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(Precio_Real = Y_valida)
+comparaciones = comparaciones.assign(Precio_Prediccion = predicciones_rm.flatten().tolist())
+print(comparaciones)
+
+```
+
+#### RMSE modelo de rm
+
+```{python}
+rmse_rm = mean_squared_error(
+        y_true  = Y_valida,
+        y_pred  = predicciones_rm,
+        squared = False
+       )
+print(f"El error (rmse) de test es: {rmse_rm}")
+```
+
+o
+
+```{python}
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones_rm)))
+```
+
+### Modelo de árbol de regresión (AR)
+
+Se construye el modelo de árbol de regresión (ar)
+
+```{python}
+modelo_ar = DecisionTreeRegressor(
+            #max_depth         = 3,
+            random_state      = 2022
+          )
+
+```
+
+Entrenar el modelo
+
+```{python}
+modelo_ar.fit(X_entrena, Y_entrena)
+```
+
+#### Visualización de árbol de regresión
+
+```{python}
+fig, ax = plt.subplots(figsize=(12, 5))
+
+print(f"Profundidad del árbol: {modelo_ar.get_depth()}")
+print(f"Número de nodos terminales: {modelo_ar.get_n_leaves()}")
+```
+
+```{python}
+#plot = plot_tree(
+#            decision_tree = modelo_ar,
+#            feature_names = datos.drop(columns = "price").columns,
+#            class_names   = 'price',
+#            filled        = True,
+#            impurity      = False,
+#            fontsize      = 10,
+#            precision     = 2,
+#            ax            = ax
+#       )
+
+#plot
+```
+
+Reglas de asociación del árbol
+
+```{python}
+texto_modelo = export_text(
+                    decision_tree = modelo_ar,
+                    feature_names = list(datos_dummis.drop(columns = "price").columns)
+               )
+print(texto_modelo)
+```
+
+#### Importancia de los predictores
+
+```{python}
+importancia_predictores = pd.DataFrame(
+                            {'predictor': datos_dummis.drop(columns = "price").columns, 
+                            'importancia': modelo_ar.feature_importances_}
+                            )
+                            
+print("Importancia de los predictores en el modelo")
+importancia_predictores.sort_values('importancia', ascending=False)
+```
+
+Estos sería los predictores más importantes para el modelo de árbol de regresión *enginesize, curbweight, citympg, peakrpm, y wheelbase*
+
+
+#### Predicciones del modelo (ar)
+
+```{python}
+predicciones_ar = modelo_ar.predict(X = X_valida)
+predicciones_ar
+
+```
+
+#### Tabla comparativa
+
+```{python}
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(Precio_Real = Y_valida)
+comparaciones = comparaciones.assign(Precio_Prediccion = predicciones_ar.flatten().tolist())
+print(comparaciones)
+
+```
+
+#### RMSE modelo de ar
+
+```{python}
+rmse_ar = mean_squared_error(
+        y_true  = Y_valida,
+        y_pred  = predicciones_ar,
+        squared = False
+       )
+print(f"El error (rmse) de test es: {rmse_ar}")
+```
+
+o
+
+```{python}
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones_ar)))
+```
+
+#### Modelo de bosques aleatorios (RF)
+
+Se construye el modelo de árbol de regresión (ar). Semilla 2022 y 20 árboles de entrenamiento
+
+```{python}
+modelo_rf = RandomForestRegressor(n_estimators = 20, random_state = 2022)
+
+modelo_rf.fit(X_entrena, Y_entrena)
+
+```
+
+#### Variables de importancia
+
+```{python}
+# pendiente ... ...
+
+```
+
+#### Predicciones del modelo (rf)
+
+```{python}
+predicciones_rf = modelo_rf.predict(X_valida)
+predicciones_rf
+
+```
+
+#### Tabla comparativa
+
+```{python}
+
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(Precio_Real = Y_valida)
+comparaciones = comparaciones.assign(Precio_Prediccion = predicciones_rf.flatten().tolist())
+print(comparaciones)
+```
+
+#### RMSE modelo de ar
+
+```{python}
+rmse_rf = mean_squared_error(
+        y_true  = Y_valida,
+        y_pred  = predicciones_rf,
+        squared = False
+       )
+print(f"El error (rmse) de test es: {rmse_rf}")
+```
+
+o
+
+```{python}
+print('Root Mean Squared Error RMSE:', np.sqrt(metrics.mean_squared_error(Y_valida, predicciones_rf)))
+```
+
+## Evaluación de modelos
+
+Se comparan las predicciones
+
+```{python}
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(Precio_Real = Y_valida)
+comparaciones = comparaciones.assign(Precio_Prediccion_rm = predicciones_rm.flatten().tolist(), Precio_Prediccion_ar = predicciones_ar.flatten().tolist(), Precio_Prediccion_rf = predicciones_rf.flatten().tolist())
+print(comparaciones)
+```
+
+Se compara el RMSE.
+
+Se crea un arreglo numpy
+
+```{python}
+rmse = np.array([[rmse_rm, rmse_ar, rmse_rf]])
+rmse
+```
+
+Se construye data.frame a partir del rreglo nmpy
+
+```{python}
+
+rmse = pd.DataFrame(rmse)
+rmse.columns = ['rmse_rm', 'rmse_ar', 'rmse_rf']
+rmse
+
+```
+
+# Interpretación
+
+Puede ser similar a la de R ..... Pendiente .....
+
+Se cargaron todos los datos numéricos y categóricos del conjunto de datos de precios de automóviles.
+
+Pendiente
+
+El mejor modelo conforme al estadístico raiz del error cuadrático medio (*rmse*) fue bosques aleatorios; se tuvo como resultado un de 2468.37 de diferencia en promedio de las predicciones conforme a valores reales.
+
+Se construyeron datos de entrenamiento y validación y con el porcentaje de 80% y 20% respectivamente.
