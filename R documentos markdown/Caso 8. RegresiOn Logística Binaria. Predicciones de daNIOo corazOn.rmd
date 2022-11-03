@@ -120,43 +120,43 @@ datos = mutate (datos,HeartDisease_01=if_else(HeartDisease=='Yes',1,0))
 
 ## Las variables de interés
 
-Todas las variables son de entrada o variables independientes:
+Todas las variables de entrada o variables independientes:
 
--   "BMI": Indice de masa corporal con valores entre 12.02 y 94.85.
+-   "*BMI*": Indice de masa corporal con valores entre 12.02 y 94.85.
 
--   "Smoking": Si la persona es fumadora o no con valores categóritos de 'Yes' o 'No'.
+-   "*Smoking*": Si la persona es fumadora o no con valores categóritos de 'Yes' o 'No'.
 
--   "AlcoholDrinking" : Si consume alcohol o no, con valores categóricos de 'Yes' o 'No'.
+-   "*AlcoholDrinking*" : Si consume alcohol o no, con valores categóricos de 'Yes' o 'No'.
 
--   "Stroke": Si padece alguna anomalía cerebrovascular, apoplejia o algo similar, con valores categóricos de 'Yes' o 'No'.
+-   "*Stroke*": Si padece alguna anomalía cerebrovascular, apoplejia o algo similar, con valores categóricos de 'Yes' o 'No'.
 
--   "PhysicalHealth" Estado físico en lo general con valores entre 0 y 30.
+-   "*PhysicalHealth*" Estado físico en lo general con valores entre 0 y 30.
 
--   "MentalHealth". Estado mental en lo general con valores entre 0 y 30.
+-   "*MentalHealth*". Estado mental en lo general con valores entre 0 y 30.
 
--   "DiffWalking" . Que si se le dificulta caminar o tiene algún padecimiento al caminar, con valores categóritoc de 'Yes' o 'No'.
+-   "*DiffWalking*" . Que si se le dificulta caminar o tiene algún padecimiento al caminar, con valores categóritoc de 'Yes' o 'No'.
 
--   "Sex": Género de la persona, con valores de 'Female' y 'Male' para distinguir al género femenino y masculino respectivamente.
+-   "*Sex*": Género de la persona, con valores de 'Female' y 'Male' para distinguir al género femenino y masculino respectivamente.
 
--   "AgeCategory": Una clasificación de la edad de la persona de entre 18 y 80 años. La primera categoría con un rango de edad entre 18-24, a partir de 25 con rangos de 5 en 5 hasta la clase de 75-80 y una última categoría mayores de 80 años.
+-   "*AgeCategory*": Una clasificación de la edad de la persona de entre 18 y 80 años. La primera categoría con un rango de edad entre 18-24, a partir de 25 con rangos de 5 en 5 hasta la clase de 75-80 y una última categoría mayores de 80 años.
 
--   "Race". Raza u origen de la persona con valores categóricos de '*American Indian/Alaskan Native', 'Asian','Black', 'Hispanic', 'Other'* y'*White'.*
+-   "*Race*". Raza u origen de la persona con valores categóricos de '*American Indian/Alaskan Native', 'Asian','Black', 'Hispanic', 'Other'* y'*White'.*
 
--   "Diabetic". Si padece o ha padecido de diabetes en cuatro condiciones siendo Yes y No para si o no: 'No', 'borderline diabetes' condición antes de detectarse diabetes tipo 2, 'Yes', y 'Yes (during pregnancy)' durante embarazo.
+-   "*Diabetic*". Si padece o ha padecido de diabetes en cuatro condiciones siendo Yes y No para si o no: 'No', 'borderline diabetes' condición antes de detectarse diabetes tipo 2, 'Yes', y 'Yes (during pregnancy)' durante embarazo.
 
--   "PhysicalActivity" que si realiza actividad física, con valores categóricos de 'Yes' o 'No'.
+-   "*PhysicalActivity*" que si realiza actividad física, con valores categóricos de 'Yes' o 'No'.
 
--   "GenHealth": EStado general de salud de la persona con valores categóricos de 'Excellent', 'Very good', 'Good', 'Fair' y 'Poor' con significado en español de excelente, muy buena, buena, regular y pobre o deficiente.
+-   "*GenHealth*": EStado general de salud de la persona con valores categóricos de 'Excellent', 'Very good', 'Good', 'Fair' y 'Poor' con significado en español de excelente, muy buena, buena, regular y pobre o deficiente.
 
--   "SleepTime": valor numérico de las horas de sueño u horas que duerme la persona con valores en un rango entre 1 y 24.
+-   "*SleepTime*": valor numérico de las horas de sueño u horas que duerme la persona con valores en un rango entre 1 y 24.
 
--   "Asthma": si padece de asma o no, con valores categóricos de 'Yes' o 'No'.
+-   "*Asthma*": si padece de asma o no, con valores categóricos de 'Yes' o 'No'.
 
--   "KidneyDisease": si tiene algún padecimiento en los riñones, con valores categóricos de 'Yes' o 'No'.
+-   "*KidneyDisease*": si tiene algún padecimiento en los riñones, con valores categóricos de 'Yes' o 'No'.
 
--   "SkinCancer": si padece algún tipo de cancer de piel, con valores categóricos de 'Yes' o 'No'.
+-   "*SkinCancer*": si padece algún tipo de cáncer de piel, con valores categóricos de 'Yes' o 'No'.
 
-La variable de interés como dependiente o variable de salida es la de daño al corazón (HeartDisease), con valores categóricos de 'Yes' o 'No'.
+La variable de interés como dependiente o variable de salida es la de daño al corazón (*HeartDisease*), con valores categóricos de 'Yes' o 'No'.
 
 ## Datos de entrenamiento y validación
 
@@ -259,7 +259,7 @@ Uno de los beneficios de las matrices de confusión es que facilitan ver si el s
 
 Hay que encontrar a cuantos casos se le atinaron utilizando los datos de validación y con ello encontrar el porcentaje de aciertos.
 
-![](images/matriz%20de%20confusion.jpg){width="600"}
+![](images/matriz%20de%20confusion.jpg){width="500"}
 
 Se puede evaluar el modelo con la matriz de confusión interpretando algunos estadísticos:
 
@@ -287,9 +287,9 @@ $$
 
 #### Construyendo la matriz de confusión del modelo de regresión logística
 
-Factorizar las columnas "HeartDisease_01" & "heartDiseasePred" de la tabla comparativa
+Factorizar las columnas "*HeartDisease_01*" & "heartDiseasePred" de la tabla comparativa
 
-Factorizar en R significa categorizar con la función "as.factor" o "factor"
+Factorizar en R significa categorizar con la función "*as.factor()*" o "factor"
 
 Se muestra a tabla con las columnas de interés para interpretar las predicciones.
 
@@ -299,22 +299,22 @@ t_comparativa$heartDiseasePred = as.factor(t_comparativa$heartDiseasePred)
 kable(head(t_comparativa, 20), caption = "Tabla comparativa, primeros 20 registros")
 ```
 
-Creando de la matriz de confusión con la función *confusionMatrix()* de la librería *caret* con las variables de interés: **"HeartDisease_01"** y **"heartDiseasePred",** que representan los valores reales y las predicciones respectivamente.
+Creando de la matriz de confusión con la función *confusionMatrix()* de la librería caret con las variables de interés: **"*HeartDisease_01*"** y **"*heartDiseasePred*",** que representan los valores reales y las predicciones respectivamente.
 
 ```{r}
 matrixConfusion <- confusionMatrix(t_comparativa$HeartDisease_01,t_comparativa$heartDiseasePred)
 matrixConfusion
 ```
 
-El valor estadístico de Accuracy = Exactitud igual a 0.9153 significa un valor del 91.53%; se interpreta que de cada 100 el modelo acierta en la predicción el 91.53% de las ocasiones.
+El valor estadístico de *Accuracy* = Exactitud igual a 0.9153 significa un valor del 91.53%; se interpreta que de cada 100 el modelo acierta en la predicción el 91.53% de las ocasiones.
 
 Si la métrica era que debiera tener un valor por encima del 70% el modelo se acepta pero debe compararse contra otro modelo de clasificación para ver cual es más eficiente en relación tan solo en el estadístico de Exactitud.
 
-Este valor de Accuracy = Exactitud deberá compararse contra otros modelos.
+Este valor de *Accuracy* = Exactitud deberá compararse contra otros modelos.
 
 ## Predicciones con datos nuevos
 
-Se crea un registro de una presona con ciertas condiciones de salud.
+Se crea un registro de una persona con ciertas condiciones de salud.
 
 ```{r}
 BMI <- 38
@@ -338,7 +338,7 @@ persona <- data.frame(BMI,Smoking, AlcoholDrinking, Stroke, PhysicalHealth, Ment
 persona
 ```
 
-Se hace la predicción con estos valores:
+Se hace la predicción con estos valores de si tiene p no daño en el corazón:
 
 ```{r}
 prediccion <- predict(object = modelo.rl, newdata = persona, se.fit = TRUE)
