@@ -51,7 +51,7 @@ Para predicciones el modelo de regresión logística binaria encuentra la probab
 
 Cuando la variable respuesta posee dos categorías, entonces se estará delante de una regresión logística binaria.
 
-En cambio, si la variable respuesta posee más de dos categorías, se usará la regresión logística multinomial [@zang2020]
+En cambio, si la variable respuesta posee más de dos categorías, se usará la regresión logística multinomial [@zang2020].
 
 En este caso que se presenta y describe a continuación, se utiliza la regresión logística binomial como parte de los algoritmos supervisados de *machine learning*.
 
@@ -270,13 +270,14 @@ Se puede evaluar el modelo con la matriz de confusión interpretando algunos est
 Se evalúa el modelo de acuerdo a estas condiciones:
 
 -   Accuracy o exactitud $$
-    accuracy = \frac{VP + FP}{n}
+    accuracy = \frac{VP + VN}{VP+FP+FN+VN} \\
+    n = VP+FP+FN+VN
     $$
 
 -   Precision o precisión
 
 $$
-precision = \frac{TP}{VP + FP}
+precision = \frac{VP}{VP + FP}
 $$
 
 -   Recall o recuperación $$
@@ -286,7 +287,7 @@ $$
 -   Especificity o especificidad (tasa de verdaderos negativos)
 
 $$
-especificity = \frac{VP}{VN + FP}
+especificity = \frac{VN}{VN + FP}
 $$
 
 #### Construyendo la matriz de confusión del modelo de regresión logística

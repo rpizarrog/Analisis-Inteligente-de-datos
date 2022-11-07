@@ -218,13 +218,14 @@ Se puede evaluar el modelo con la matriz de confusión interpretando algunos est
 Se evalúa el modelo de acuerdo a estas condiciones:
 
 -   Accuracy o exactitud $$
-    accuracy = \frac{VP + FP}{n}
+    accuracy = \frac{VP + VN}{VP+FP+FN+VN} \\
+    n = VP+FP+FN+VN
     $$
 
 -   Precision o precisión
 
 $$
-precision = \frac{TP}{VP + FP}
+precision = \frac{VP}{VP + FP}
 $$
 
 -   Recall o recuperación $$
@@ -234,7 +235,7 @@ $$
 -   Especificity o especificidad (tasa de verdaderos negativos)
 
 $$
-especificity = \frac{VP}{VN + FP}
+especificity = \frac{VN}{VN + FP}
 $$
 
 #### Construyendo la matriz de confusión del modelo de regresión logística
