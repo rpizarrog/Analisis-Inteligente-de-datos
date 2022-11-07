@@ -30,7 +30,7 @@ Se desarrollan los modelos de:
 
 -   **Regresión Logística binaria**
 
--   Árbol de Clasificación tipo class
+-   Árbol de Clasificación tipo *class*
 
 -   K Means
 
@@ -347,7 +347,7 @@ Se hacen predicciones con los datos de validación. Se observan las primeras 10.
 
 ```{python}
 predicciones_rlog = modelo_rlog.predict(X_valida)
-print(predicciones_rlog[0:10])
+print(predicciones_rlog)
 ```
 
 ### Tabla comparativa
@@ -380,39 +380,32 @@ print(classification_report(comparaciones['HeartDisease_Real'], comparaciones['H
 
 ```
 
+El modelo le atina aproximadamente al 92%, *accuracy* = 0.92
+
 ### Predicciones con datos nuevos
 
-Se crea un registro de una persona con ciertas condiciones de salud.
+Se crea un registro de una persona con ciertas condiciones de salud a partir de un diccionario.
 
-```{r}
-BMI = 38
-Smoking = 1 #'Yes'
-AlcoholDrinking = 1 #'Yes'
-Stroke = 1 #'Yes'
-# PhysicalHealth = 2
-# MentalHealth = 5
-DiffWalking = 1 #'Yes'
-# Sex = 'Male'
-# AgeCategory = '70-74'
-# Race = 'Black'
-# Diabetic <- 'Yes'
-# PhysicalActivity = "No"
-# GenHealth = "Fair"
-# SleepTime = 12
-# Asthma = "Yes"
-# KidneyDisease = "Yes"
-# SkinCancer = 'No'
-# persona = data.frame(BMI,Smoking, AlcoholDrinking, Stroke, PhysicalHealth, MentalHealth, DiffWalking, Sex, AgeCategory, Race, Diabetic, PhysicalActivity, GenHealth, SleepTime, Asthma, KidneyDisease, SkinCancer)
-#persona
+```{python}
+# Se crea un diccionario
+registro = {'BMI': 38, 'PhysicalHealth': 2, 'MentalHealth': 5, 'SleepTime' : 12, 'Smoking_Yes' : 1, 'AlcoholDrinking_Yes' : 1, 'Stroke_Yes' : 1, 'DiffWalking_Yes': 1, 'Sex_Male': 1, 'AgeCategory_70-74': 1, 'Race_Black' : 1, 'Diabetic_Yes' : 1, 'PhysicalActivity_Yes' : 0, 'GenHealth_Fair' : 1, 'Asthma_Yes' : 1, 'KidneyDisease_Yes':1, 'SkinCancer_Yes': 0}
+persona = pd.DataFrame()
+persona = persona.append(registro, ignore_index=True)
+persona
 ```
 
-Se hace la predicción con estos valores de si tiene p no daño en el corazón:
+Se hace la predicción con estos valores de si tiene o no daño en el corazón: Faltan algunas variables lo que pasa es que fueron construidas cpmo variables Dummys...
+
+```{python}
+#prediccion = modelo_rlog.predict(persona)
+#print(prediccion)
+```
 
 ### Interpretación
 
 Se hace una evaluación del modelo de regresión logística basada en el estadístico de *accuracy* de la matriz de confusión.
 
-Hhabiendo realizado predicciones con los datos de validación, se tiene un valor de aproximadamente del $92%$ con el de exactitud en el modelo de regresion logística .
+Habiendo realizado predicciones con los datos de validación, se tiene un valor de aproximadamente del $92%$ 92% con el de exactitud en el modelo de regresión logística .
 
 El modelo se aprueba dado que la métrica era igual o superior del $70%$.
 
