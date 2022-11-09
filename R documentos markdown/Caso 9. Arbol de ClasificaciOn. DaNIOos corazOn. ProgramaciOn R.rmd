@@ -2,7 +2,14 @@
 title: "Caso 9. Arbol de Clasificación. Daños corazón. Programación R"
 author: "Rubén Pizarro Gurrola"
 date: "'r sysdate()'"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
 ---
 
 # Objetivo
@@ -141,7 +148,7 @@ kable(head(datos.entrenamiento, 20), caption = "Primeros 20 registros de datos d
 Se muestran los primeros 20 registros de datos de validación .
 
 ```{r}
-kable(head(datos.entrenamiento, 20), caption = "Primeros 20 registros de datos de entrenamiento")
+kable(head(datos.validacion, 20), caption = "Primeros 20 registros de datos de validación")
 ```
 
 ## Arbol de Clasificación

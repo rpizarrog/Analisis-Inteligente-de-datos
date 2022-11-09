@@ -9,7 +9,6 @@ output:
     toc_float: true
     toc_depth: 6
     number_sections: yes
-bibliograph: references.bib
 bibliography: references.bib
 ---
 
@@ -89,11 +88,11 @@ que significa calcular el logaritmo natural de cada valor de de $x_i$ para deter
 library(readr)
 library(dplyr)
 library(caret)
-library(rpart)
-library(rpart.plot)
+# library(rpart)
+# library(rpart.plot)
 library(knitr)
-library(e1071)        # Vectores de Soporte SVM
-library(rpart)        # Arboles de clasificación
+# library(e1071)        # Vectores de Soporte SVM
+# library(rpart)        # Arboles de clasificación
 ```
 
 ## Cargar datos
@@ -191,7 +190,7 @@ kable(head(datos.entrenamiento, 20), caption = "Primeros 20 registros de datos d
 Se muestran los primeros 20 registros de datos de validación .
 
 ```{r}
-kable(head(datos.entrenamiento, 20), caption = "Primeros 20 registros de datos de entrenamiento")
+kable(head(datos.validacion, 20), caption = "Primeros 20 registros de datos de validación")
 ```
 
 ## Regresión Logística binomial
