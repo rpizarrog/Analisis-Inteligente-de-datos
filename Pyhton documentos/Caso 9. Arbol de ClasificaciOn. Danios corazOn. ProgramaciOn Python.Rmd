@@ -1,5 +1,5 @@
 ---
-title: "Caso 8. Regresión Logística Binaria. Predicciones de daño corazón. Python"
+title: "Caso 9. Arbol de Clasificación. Daños corazón. Programación Python"
 author: "Rubén Pizarro Gurrola"
 date: "`r Sys.Date()`"
 output: 
@@ -14,7 +14,7 @@ bibliography: references.bib
 
 # Objetivo
 
-Implementar el modelo de regresión logística binaria con datos relacionados a una condición de salud de las personas para predecir anomalías de corazón y evaluar la exactitud del modelo mediante la matriz de confusión.
+Implementar el modelo de árbol de clasificación con datos relacionados a una condición de salud de las personas para predecir anomalías de corazón y evaluar la exactitud del modelo mediante la matriz de confusión.
 
 # Descripción
 
@@ -22,15 +22,15 @@ Se cargan librerías y se descargan los datos: <https://raw.githubusercontent.co
 
 Los datos están relacionados con aspectos médicos y son valores numéricos de varias variables que caracterizan el estado de salud de 319,795 personas.
 
-Se pretende construir un modelo utilizando **algoritmos supervisados** para resolver la **tarea de clasificación binaria** e identificar si una persona padece del corazón o no.
+Se construye un modelo supervisado basado en el algoritmo de árbol de clasificación para resolver la tarea de clasificación binaria e identificar si una persona padece del corazón o no.
 
 Se construyen datos de entrenamiento y validación al 80% y 20% cada uno.
 
-Se desarrollan los modelos de:
+Se desarrollan los modelos en Python de:
 
--   **Regresión Logística binaria**
+-   Regresión Logística binaria
 
--   Árbol de Clasificación tipo *class*
+-   **Árbol de Clasificación tipo class**
 
 -   K Means
 
@@ -40,82 +40,51 @@ Se desarrollan los modelos de:
 
 -   SVM Radial
 
-Los modelo se aceptan si tienen un valor de exactitud ("*Accuracy*") por encima del 70%..
-
-El modelo se construye con funciones de librerías de *python*
+Los modelo se aceptan si tienen un valor de exactitud (accuracy) por encima del 70%..
 
 # Fundamento teórico
 
-La regresión logística ofrece solución para clasificar y para predecir valores lógicos, es decir con un valor etiquetado tal vez 0 o 1; bueno o malo, alto o bajo, entre otras etiquetas que distingan una polaridad o significado dicotómico, o un valor u otro.
+Los árboles de clasificación son el subtipo de árboles de predicción que se aplica cuando la variable respuesta dependiente es de tipo categórica o cualitativa y que tiene un significado conforme o de acuerdo a una etiqueta.[@amat_rodrigo_arboles_2017]
 
-Para predicciones el modelo de regresión logística binaria encuentra la probabilidad de ocurrencia de un evento determinado y dicha probabilidad se hallará siempre dentro del rango.
+[@amat_rodrigo_arboles_2020]
 
-Cuando la variable respuesta posee dos categorías, entonces se estará delante de una regresión logística binaria.
-
-En cambio, si la variable respuesta posee más de dos categorías, se usará la regresión logística multinomial .
-
-El resultado real de muchos algoritmos de clasificación binaria es una puntuación de predicción en términos de probabilidad. La probabilidad indica la posible del modelo de que la observación dada pertenezca a la clase positiva.
-
-Para tomar la decisión sobre si la observación debe clasificarse como positiva o negativa, como interpretación de la probabilidad se define el umbral de clasificación o el corte que normalmente es 50% arriba es positiva y 50% abajo es negativa y compara con la puntuación con dicho umbral de la predicción.
-
-Cualquier observación con puntuaciones superiores al umbral se prevé como la clase positiva y las puntuaciones inferiores al umbral se prevén como la clase negativa.[@amazonmahinelearning]. [@amazonmahinelearning]
-
-En este caso que se presenta y describe a continuación, se utiliza la regresión logística binomial como parte de los algoritmos supervisados de machine learning.
-
-El modelo requiere una cantidad de variables independientes del modelo $x_1, x_2 ... x_n$ ó $\beta_1, \beta_2...\beta_n$.
-
-Se debe identificar la variable dependiente $Y$ o la variable respuesta de tipo binaria, donde cada componente de 𝑌 se distribuye mediante una distribución de Bernoulli $[ 0 | 1]$.
-
-Se necesitan $𝑛$ el número de observaciones.
-
-Entonces $𝑋 = (𝑥_1, … , 𝑥_𝑛)^T$ el conjunto de variable independientes.
-
-Se identifica como $\theta$ el vector de parámetros asociado al modelo, de forma que $\theta\in R^{k+1}$ que significa que los valores del vector resultante pertenecen a cada una de las variables.
-
-Sea $\pi(\theta^T𝑥_𝑖)$ la probabilidad de que $Y_i$ tome un valor igual a $1$, entonces su modelo se puede escribir como:
-
-$$
-\pi(\theta^Tx_i) = P(Y =1|X=x) = \frac{1}{1+e}
-$$
-
-Si $\theta^Tx_i$ los valores ajustados toma valores elevados y positivos, entonces ... ... se aproximará a 0 y, en consecuencia, el valor de la función anterior será igual a 1. En caso de que $\theta^Tx_i$ tome valores elevados pero negativos, entonces el valor de la función será $0$ dado que $e ^ {\theta^Tx_i}$ tenderá a infinito. [@zang2020] [@zang2020].
-
-El valor $e$ como número irracional y basado en la teoría de logaritmos naturales es el valor constante que se puede obtener en lenguaje R con la función exp(1) igual a r exp(1).
-
-Efectuando la transformación logit a la expresión inicial, se obtiene:
-
-$$
-logit(\pi(\theta^Tx_i)) = ln(\frac{\pi(\theta^Tx_i)}{1 - \pi(\theta^Tx_i)})
-$$
-
-que significa calcular el logaritmo natural de cada valor de de $x_i$ para determinar su probabilidad.
+La etiqueta puede ser 'BUENO' o 'MALO'; '0' o '1'; 'ALTO' O 'BAJO'; 'ENFERMO, 'NO ENFERMO'; entre otros ejemplos.
 
 # Desarrollo
 
 ## Cargar librerías
 
-Librería nueva que hay que instalar:
+Algunas librerías son nuevas, hay que instalarlas desde R, aquí se indican cuáles librerías y con comentario dado que ya se instalaron previamente.
 
--   py_install("plotnine") \# desde R es para gráficos *ggplot en caso de usarse*
-
--   *py_install("sidetable")* para tablas de frecuencias se usa en gráficos de barras
+```{r}
+# library(reticulate)
+# py_install("statsmodels")
+```
 
 ```{python}
 # Tratamiento de datos
 import pandas as pd
 import numpy as np
+import statsmodels.api as sm
 
 # Estadísticas
-import scipy
+import scipy 
 from scipy import stats
 
 # Para partir datos entrenamiento y validación
 from sklearn.model_selection import train_test_split
 
 # Modelo de Clasificación 
-from sklearn import linear_model
-from sklearn import model_selection
 from sklearn.metrics import classification_report
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import plot_tree
+from sklearn.tree import export_graphviz
+from sklearn.tree import export_text
+from sklearn.model_selection import GridSearchCV
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 
@@ -123,15 +92,10 @@ from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sb
 
-# Graficos ggplot similar a R
-from plotnine import *  # Antes instalar > py_install("plotnine") desde R o Python
-
-# tablas de frecuencias
-import sidetable as stb
 
 ```
 
-## Cargar datos
+## Cargar los datos
 
 Se cargan datos del enlace *URL*, se observan los primeros y últimos registros del conjunto de datos.
 
@@ -189,32 +153,6 @@ Histograma únicamente de las variables numéricas del conjunto de datos *'BMI',
 
 ```{python}
 datos[['BMI', 'PhysicalHealth', 'MentalHealth', 'SleepTime']].hist()
-
-```
-
-#### Diagramas de frecuencias de datos categóricos
-
-Diagramas de frecuencias con barras de las variables categóricas: 'Smoking', 'AlcoholDrinking', 'Stroke', ...,.
-
-```{python}
-frecuencia = (datos.groupby("Smoking").agg(frecuencia=("Smoking", "count")).reset_index())
-
-fig, ax = plt.subplots()
-# Colores
-bar_labels = ['No', 'Yes']
-bar_colors = ['tab:blue', 'tab:red']
-
-#frecuencia['frecuencia'].plot(kind="bar")
-ax.bar(frecuencia['Smoking'], frecuencia['frecuencia'], label=bar_labels, color=bar_colors)
-
-ax.set_ylabel('Frecuencia')
-ax.set_title('Fumador')
-ax.legend(title='Daño')
-
-# plt.show()
-# plt.gcf().clear()
-  
-  
 
 ```
 
@@ -288,11 +226,11 @@ print("Columnas y tipo de dato")
 datos.dtypes
 ```
 
-### Construir variables Dummys
+Para construir el modelo, se requiere variables de tipo numérica, aún se tienen en las variables independiente variables de tipo categóricas u *object* en *Python*:
 
-Existen variables que son categóricas: *'Smoking', 'AlcoholDrinking', 'Stroke', 'DiffWalking', 'Sex', 'AgeCategory', 'Race', 'Diabetic', 'PhysicalActivity', 'GenHealth', 'Asthma', 'KidneyDisease', 'SkinCancer'*.
+Las variables que son categóricas: *'Smoking', 'AlcoholDrinking', 'Stroke', 'DiffWalking', 'Sex', 'AgeCategory', 'Race', 'Diabetic', 'PhysicalActivity', 'GenHealth', 'Asthma', 'KidneyDisease', 'SkinCancer'*.
 
-Con estas variables, crear variables *Dummys* y construir un conjunto de datos que incluye las variable *dummis*.
+Con estas variables, crear variables *Dummys* y construir un conjunto de datos que incluye las variable dummis.
 
 El método de la librería de Pandas llamado *get_dummies()* convierte los datos categóricos en variables indicadoras o ficticias.
 
@@ -301,7 +239,7 @@ datos_dummis = pd.get_dummies(datos, drop_first = True)
 datos_dummis
 ```
 
-Así queda el conjunto de datos preparado llamado *datos_dummis*
+Asi queda el conjunto de datos preparado llamado *datos_dummis*
 
 ```{python}
 datos_dummis.dtypes
@@ -317,37 +255,74 @@ X_entrena, X_valida, Y_entrena, Y_valida = train_test_split(datos_dummis.drop(co
 
 ### Datos de entrenamiento
 
+Se crea un conjunto de datos de validación con 255836 registros y 37 variables.
+
 ```{python}
 X_entrena
 ```
 
 ### Datos de validación
 
+Se crea un conjunto de datos de validación con 63959 registros y 37 variables.
+
 ```{python}
 X_valida
 ```
 
-## Modelos Supervisados de Clasificación
+## Modelos Supervisados de Arbol de Clasificación
 
-Se construye un modelo de regresión logística con los datos de entrenamiento y las variables independientes.
+### Creación del modelo
+
+Se crea el modelo de árbol de clasificación con datos de entrenamiento
 
 ```{python}
-modelo_rlog = linear_model.LogisticRegression(C=1.0, class_weight=None, dual=False, fit_intercept=True,
-intercept_scaling=1, max_iter=1000)
-modelo_rlog.fit(X_entrena, Y_entrena)
+modelo_ac = DecisionTreeClassifier(
+            max_depth         = 5,
+            criterion         = 'gini',
+            random_state      = 2022
+          )
 ```
 
 ```{python}
-print(modelo_rlog.score(X_entrena, Y_entrena))
+modelo_ac.fit(X_entrena, Y_entrena)
 ```
 
-### Predicciones
-
-Se hacen predicciones con los datos de validación. Se observan las primeras 10.
+### Visualización del árbol
 
 ```{python}
-predicciones_rlog = modelo_rlog.predict(X_valida)
-print(predicciones_rlog)
+fig, ax = plt.subplots(figsize=(13, 6))
+
+print(f"Profundidad del árbol: {modelo_ac.get_depth()}")
+print(f"Número de nodos terminales: {modelo_ac.get_n_leaves()}")
+
+plot = plot_tree(
+            decision_tree = modelo_ac,
+            #feature_names = modelo_ac.tolist(),
+            class_names   = 'Daño al corazón',
+            filled        = True,
+            impurity      = False,
+            fontsize      = 7,
+            ax            = ax
+       )
+```
+
+### Reglas de asociación para la construcción del árbol
+
+```{python}
+texto_modelo = export_text(
+                    decision_tree = modelo_ac,
+                    feature_names = list(datos_dummis.drop(columns = "HeartDisease01").columns)
+               )
+print(texto_modelo)
+```
+
+## Prediccions
+
+Se construyen predicciones con los datos de validación.
+
+```{python}
+predicciones = modelo_ac.predict(X_valida)
+print(predicciones)
 ```
 
 ### Tabla comparativa
@@ -355,7 +330,7 @@ print(predicciones_rlog)
 ```{python}
 comparaciones = pd.DataFrame(X_valida)
 comparaciones = comparaciones.assign(HeartDisease_Real = Y_valida)
-comparaciones = comparaciones.assign(HeartDisease_Pred = predicciones_rlog.flatten().tolist())
+comparaciones = comparaciones.assign(HeartDisease_Pred = predicciones.flatten().tolist())
 print(comparaciones)
 
 ```
@@ -369,6 +344,7 @@ Se evalúa el modelo con la matriz de confusión
 ```{python}
 print(confusion_matrix(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred']))
 
+matriz = confusion_matrix(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred'])
 
 ```
 
@@ -376,8 +352,6 @@ print(confusion_matrix(comparaciones['HeartDisease_Real'], comparaciones['HeartD
 
 ```{python}
 print(classification_report(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred']))
-
-
 ```
 
 ```{python}
@@ -386,12 +360,11 @@ accuracy = accuracy_score(
     y_pred = comparaciones['HeartDisease_Pred'],
     normalize = True
     )
-print(f"El estadístico accuracy es: {100 * accuracy} %")
+print(f"El accuracy de test es: {100 * accuracy} %")
+
 ```
 
-El modelo le atina aproximadamente al 92%, *accuracy* = 91.76%
-
-### Predicciones con datos nuevos
+## Prediccions con un registro nuevo
 
 Se crea un registro de una persona con ciertas condiciones de salud a partir de un diccionario.
 
@@ -418,22 +391,24 @@ persona
 Se hace la predicción en términos de clasificación de la persona con estos valores para saber si tiene o no daño en el corazón:
 
 ```{python}
-prediccion = modelo_rlog.predict(persona)
+prediccion = modelo_ac.predict(persona)
 print(prediccion)
 ```
 
-Con los datos clínicos de una persona nueva con ciertas características y que se evalúe en el modelo de regresión logística construído, el resulado es que la persona SI tiene daño al corazón.
+La predicción en términos de clasificación de la persona con las características proporcionadas es que está enfermo o tiene daño del corazón.
 
-### Interpretación
+# Interpretación
 
 Se hace una evaluación del modelo de regresión logística basada en el estadístico de *accuracy* de la matriz de confusión.
 
-Habiendo realizado predicciones con los datos de validación, se tiene un valor de aproximadamente del $91.76%$ , alrededor de 92% con el de exactitud en el modelo de regresión logística .
+Habiendo realizado predicciones con los datos de validación, se tiene un valor de aproximadamente del $91.68 \%$ aproximadamente el 92% de exactitud en el modelo de árbol de regresión.
 
 El modelo se aprueba dado que la métrica era igual o superior del $70%$.
 
-Con un dato de un caso nuevo de una persona con ciertas características, el modelo lo clasifica como que SI tiene daño en el corazón.
+Habrá que compararlo contra otro modelo de clasificación.
 
-¡El modelo es bueno!
+Se hizo una predicción de un caso e una persona con ciertas condiciones de salud y la predicción en términos de clasificación resulta que ésta persona tiene daño al corazón.
+
+¡El modelo es bueno!,
 
 # Bibliografía
