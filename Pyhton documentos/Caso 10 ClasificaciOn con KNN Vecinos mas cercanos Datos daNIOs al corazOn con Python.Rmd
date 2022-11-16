@@ -1,0 +1,375 @@
+---
+title: "Caso 10. Clasificación con KNN Vecinos mas cercanos. Datos daños al corazón con Python"
+author: "Rubén Pizarro Gurrola"
+date: "2022-11-16"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Ojetivo
+
+Implementar el modelo de vecinos mas cercanos KNN con programación *Python* para resolver la tarea de clasificación de una condición de salud de las personas mediante predicción de anomalías de corazón evaluando la exactitud del modelo mediante la matriz de confusión.
+
+# Descripción
+
+Se cargan librerías y se descargan los datos: <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/heart_2020_cleaned.csv>
+
+Los datos están relacionados con aspectos médicos y son valores numéricos de varias variables que caracterizan el estado de salud de 319,795 personas.
+
+Se construye un modelo supervisado basado en el algoritmo de vecinos mas cercanos KNN para resolver la tarea de clasificación binaria e identificar si una persona padece del corazón o no.
+
+Se construye el modelo con *sklearn.neighbors **import** KNeighborsClassifier*
+
+Se construyen datos de entrenamiento y validación al 80% y 20% cada uno.
+
+Se desarrollan los modelos de:
+
+-   Regresión Logística binaria
+
+-   Árbol de Clasificación tipo class
+
+-   **KNN Vecinos mas cercanos**
+
+-   SVM Lineal
+
+-   SVM Polinomial
+
+-   SVM Radial
+
+Los modelo se aceptan si tienen un valor de exactitud por encima del 70%..
+
+# Fundamento teórico
+
+El algoritmo vecinos mas cercanos KNN clasifica cada dato nuevo en el grupo que corresponda, según tenga k vecinos más cerca de un grupo o de otro. Es decir, calcula la distancia del elemento nuevo a cada uno de los existentes, y ordena dichas distancias de menor a mayor para ir seleccionando el grupo al que pertenecer.
+
+Este grupo será, por tanto, el de mayor frecuencia con menores distancias.
+
+El KNN es un algoritmo de aprendizaje supervisado, es decir, que a partir de un juego de datos inicial su objetivo será el de clasificar correctamente todas las instancias nuevas. El juego de datos típico de este tipo de algoritmos está formado por varios atributos descriptivos y un solo atributo objetivo (también llamado clase).
+
+El método K-NN es un método importantes de clasificación supervisada. En el proceso de aprendizaje no se hace ninguna suposición acerca de la distribución de las variables predictoras, es por ello que es un método de clasificación no paramétrico, que estima el valor de la función de densidad de probabilidad o directamente la probabilidad posterior de que un elemento $x$ pertenezca a la clase $CjCj$ a partir de la información proporcionada por el conjunto de entrenamiento.
+
+Es un método bastante sencillo y robusto que simplemente busca en las observaciones más cercanas a la que se está tratando de predecir y clasifica el punto de interés basado en la mayoría de datos que le rodean.
+
+Es un algoritmo muy simple de implementar y de entrenar, pero tienen una carga computacional elevada y no es apropiado cuando se tienen muchos grados de libertad.
+
+# Desarrollo
+
+## Cargar librerías
+
+Algunas librerías son nuevas, hay que instalarlas desde R, aquí se indican cuáles librerías y con comentario dado que ya se instalaron previamente.
+
+```{r}
+# library(reticulate)
+# py_install("statsmodels")
+```
+
+```{python}
+# Tratamiento de datos
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+
+# Estadísticas
+import scipy 
+from scipy import stats
+
+# Para partir datos entrenamiento y validación
+from sklearn.model_selection import train_test_split
+
+# Modelo de Clasificación 
+from sklearn.metrics import classification_report
+
+from sklearn.neighbors import KNeighborsClassifier
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+
+# Gráficos
+import matplotlib.pyplot as plt
+import seaborn as sb
+
+
+```
+
+## Cargar los datos
+
+Se cargan datos del enlace *URL*, se observan los primeros y últimos registros del conjunto de datos.
+
+```{python}
+datos = pd.read_csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/danios%20al%20corazon%20numericos%20limpios.csv")
+datos
+```
+
+## Exploración de datos
+
+Son 319795 observaciones y 18 variables
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+### Visualización de datos
+
+#### ¿Cuántos casos hay de cada clase?
+
+Hay 292422 casos sin daño al corazón y el resto que si tienen daño 27373.
+
+```{python}
+frecuencia = (datos.groupby("HeartDisease").agg(frecuencia=("HeartDisease","count")).reset_index())
+  
+frecuencia
+```
+
+```{python}
+
+
+fig, ax = plt.subplots()
+# Colores
+bar_labels = ['No', 'Yes']
+bar_colors = ['tab:blue', 'tab:red']
+
+#frecuencia['frecuencia'].plot(kind="bar")
+ax.bar(frecuencia['HeartDisease'], frecuencia['frecuencia'], label=bar_labels, color=bar_colors)
+
+ax.set_ylabel('Frecuencia')
+ax.set_title('Daños al Corazón')
+ax.legend(title='Daño')
+
+plt.show()
+# plt.gcf().clear()
+
+```
+
+## Transformar datos
+
+Crear variable llamada *HeartDisease01* que se utilizará en el modelo de **Regresión Logística** tendrá valores **0** de para 'No' daño y **1** para si hay daño ('*Yes*').
+
+```{python}
+datos['HeartDisease01'] = np.where(datos ['HeartDisease']== "Yes", 1, 0)
+ 
+```
+
+Quitar la variable HeartDisease que ya tiene variable transformada a HeartDisease01
+
+```{python}
+datos = datos.drop("HeartDisease", axis='columns')
+```
+
+Quedaron las columnas:
+
+```{python}
+datos.columns.values
+```
+
+### Las variables de interés
+
+Todas las variables de entrada o variables independientes:
+
+-   "*BMI*": Indice de masa corporal con valores entre 12.02 y 94.85.
+
+-   "*Smoking*": Si la persona es fumadora o no con valores categóritos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*AlcoholDrinking*" : Si consume alcohol o no, con valores categóricos de 'Yes' o 'No'.[1 \| 2]
+
+-   "*Stroke*": Si padece alguna anomalía cerebrovascular, apoplejia o algo similar, con valores categóricos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*PhysicalHealth*" Estado físico en lo general con valores entre 0 y 30.
+
+-   "*MentalHealth*". Estado mental en lo general con valores entre 0 y 30.
+
+-   "*DiffWalking*" . Que si se le dificulta caminar o tiene algún padecimiento al caminar, con valores categóritoc de 'Yes' o 'No'.[1 \| 2]
+
+-   "*Sex*": Género de la persona, con valores de 'Female' y 'Male' para distinguir al género femenino y masculino respectivamente. [1 \| 2]
+
+-   "*AgeCategory*": Una clasificación de la edad de la persona de entre 18 y 80 años. La primera categoría con un rango de edad entre 18-24, a partir de 25 con rangos de 5 en 5 hasta la clase de 75-80 y una última categoría mayores de 80 años. [1 - 13]
+
+-   "*Race*". Raza u origen de la persona con valores categóricos de '*American Indian/Alaskan Native', 'Asian','Black', 'Hispanic', 'Other'* y'*White'.* [1 - 6]
+
+-   "*Diabetic*". Si padece o ha padecido de diabetes en cuatro condiciones siendo Yes y No para si o no: 'No', 'borderline diabetes' condición antes de detectarse diabetes tipo 2, 'Yes', y 'Yes (during pregnancy)' durante embarazo. [1 - 4]
+
+-   "*PhysicalActivity*" que si realiza actividad física, con valores categóricos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*GenHealth*": EStado general de salud de la persona con valores categóricos de 'Excellent', 'Very good', 'Good', 'Fair' y 'Poor' con significado en español de excelente, muy buena, buena, regular y pobre o deficiente. [1 - 5]
+
+-   "*SleepTime*": valor numérico de las horas de sueño u horas que duerme la persona con valores en un rango entre 1 y 24.
+
+-   "*Asthma*": si padece de asma o no, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+-   "*KidneyDisease*": si tiene algún padecimiento en los riñones, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+-   "*SkinCancer*": si padece algún tipo de cáncer de piel, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+La variable de interés como dependiente o variable de salida es la de daño al corazón (*HeartDisease*), con valores categóricos de 'Yes' o 'No' , ahora la variable *HeartDisease01* con valores *1 o 0.*
+
+Nuevamente la descripción de variables y ahora son 319795 observaciones y 18 variables
+
+```{python}
+print("Observaciones y variables: ", datos.shape)
+print("Columnas y tipo de dato")
+# datos.columns
+datos.dtypes
+```
+
+Para construir el modelo, se requiere variables de tipo numérica.
+
+## Datos de entrenamiento y validación
+
+Datos de entrenamiento al 80% de los datos y 20% los datos de validación. Semilla 2022
+
+```{python}
+X_entrena, X_valida, Y_entrena, Y_valida = train_test_split(datos.drop(columns = "HeartDisease01"), datos['HeartDisease01'],train_size = 0.80,  random_state = 2022)
+```
+
+### Datos de entrenamiento
+
+Se crea un conjunto de datos de validación con 255836 registros y 37 variables.
+
+```{python}
+X_entrena
+```
+
+### Datos de validación
+
+Se crea un conjunto de datos de validación con 63959 registros y 37 variables.
+
+```{python}
+X_valida
+```
+
+## Modelos Supervisados de vecinos mas cercanos KNN
+
+### Creación del modelo
+
+Se crea el modelo de árbol de clasificación con datos de entrenamiento con un valor inicial de 12 vecinos $k=12$.
+
+```{python}
+knn = KNeighborsClassifier(n_neighbors=12)
+
+```
+
+#### Entrenando al modelo
+
+Se entrena el modelo precisamente con los datos de entrenamiento contenida en las variables independientes *X_entrena* y la variable dependiente *Y_entrena* que contiene la etiqueta *HeartDisease01* de **0** No daño y *1* que si tiene daño en el corazón.
+
+```{python}
+knn.fit(X_entrena, Y_entrena)
+```
+
+## Prediccions
+
+Se construyen predicciones con los datos de validación. Se tarda mucho en hacer predicciones dado que son 255833 observaciones en datos de entrenamiento y 63959 observaciones en datos de validación.
+
+```{python}
+predicciones = knn.predict(X_valida)
+print(predicciones)
+```
+
+### Tabla comparativa
+
+```{python}
+comparaciones = pd.DataFrame(X_valida)
+comparaciones = comparaciones.assign(HeartDisease_Real = Y_valida)
+comparaciones = comparaciones.assign(HeartDisease_Pred = predicciones.flatten().tolist())
+print(comparaciones)
+
+```
+
+### Evaluación del modelo
+
+Se evalúa el modelo con la matriz de confusión
+
+#### Matriz de confusión
+
+```{python}
+print(confusion_matrix(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred']))
+
+matriz = confusion_matrix(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred'])
+
+```
+
+#### ¿A cuantos le atina el modelo?
+
+```{python}
+print(classification_report(comparaciones['HeartDisease_Real'], comparaciones['HeartDisease_Pred']))
+```
+
+```{python}
+accuracy = accuracy_score(
+    y_true = comparaciones['HeartDisease_Real'],
+    y_pred = comparaciones['HeartDisease_Pred'],
+    normalize = True
+    )
+print(f" El valor de exactitud = accuracy es de: {100 * accuracy} %")
+
+```
+
+## Prediccions con un registro nuevo
+
+Se crea un registro de una persona con ciertas condiciones de salud a partir de un diccionario.
+
+```{python}
+# Se crea un diccionario
+
+# Mismo que R
+# BMI <- 38
+# Smoking <- 1  # 'Yes'
+# AlcoholDrinking = 1 # 'Yes'
+# Stroke <- 1 # 'Yes'
+# PhysicalHealth <- 2 
+# MentalHealth <- 5
+# DiffWalking <- 1 # 'Yes'
+# Sex = 2 # 'Male
+# AgeCategory = 11 # '70-74'
+# Race = 2 # 'Black'
+# Diabetic <- 1 # 'Yes'
+# PhysicalActivity = 2 # 'No'
+# GenHealth = 1 # "Fair"
+# SleepTime = 12
+# Asthma = 1 # 'Yes'
+# KidneyDisease = 1 # 'Yes'
+# SkinCancer = 2 # 'No'
+registro = {'BMI': 38, 'Smoking' : 1, 'AlcoholDrinking' : 1, 'Stroke' : 1,
+'PhysicalHealth': 2, 'MentalHealth': 5, 
+'DiffWalking': 1, 'Sex': 2, 'AgeCategory': 11,
+'Race' : 2, 'Diabetic' : 1,
+'PhysicalActivity' : 2, 'GenHealth' : 1,
+'SleepTime' : 12,
+'Asthma' : 1, 'KidneyDisease':1, 'SkinCancer': 2}
+persona = pd.DataFrame()
+persona = persona.append(registro, ignore_index=True)
+persona
+```
+
+Se hace la predicción en términos de clasificación de la persona con estos valores para saber si tiene o no daño en el corazón:
+
+```{python}
+prediccion = knn.predict(persona)
+print(prediccion)
+```
+
+La predicción en términos de clasificación de la persona con las características proporcionadas es 0 NO que está enfermo o que NO tiene daño del corazón.
+
+¿que predicciones se generaron en los otros modelos?. Habiendo construido modelos de basados en los algoritmos de regresión logística binaria y árbol de regresión, en estos las predicciones fueron de que '*YES*' si tiene daño al corazón.
+
+# Interpretación
+
+Se tarda mucho tiempo en construir el documento *markdown* en *Python.*
+
+El modelo predice y clasifica aproximadamente al 91%, sin embargo su procesamieto es lento y es deventaja dada la cantidad de observaciones a procesar.
+
+Se puede disminuir la cantidad de datos de entrenamiento y de datos de validación, con una muewtra representativa de los mismos o implementar un proceso de validación cruzada.
+
+# Bibliografía
