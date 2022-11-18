@@ -1,0 +1,654 @@
+---
+title: "Caso 11. Máquinas de Soporte Vectorial SVM. Daños al Corazón con R"
+author: "Rubén Pizarro Gurrola"
+date: "2022-11-17"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+    toc_depth: 6
+    number_sections: yes
+bibliography: references.bib
+---
+
+# Objetivo
+
+Implementar el modelo de máquinas de soporte vectorial (SVM) con programación R para resolver la tarea de clasificación de una condición de salud de las personas mediante predicción de anomalías de corazón evaluando la exactitud del modelo mediante la matriz de confusión.
+
+# Descripcón
+
+Se cargan librerías y se descargan los datos: <https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/heart_2020_cleaned.csv>
+
+Los datos están relacionados con aspectos médicos y son valores categóricos y numéricos de varias variables que caracterizan el estado de salud de 319795 personas.
+
+Se construye un modelo supervisado basado en el algoritmo de máquinas de soporte vectorial (SVM) para resolver la tarea de clasificación binaria e identificar si una persona padece del corazón o no.
+
+Se construyen datos de entrenamiento y validación al 80% y 20% cada uno.
+
+Primero se construye un modelo SVM de tipo lineal Segundo se construye un modelo SVM de tipo polinomial Tercero se construye un modelo SVM de tipo radial
+
+Se construyen datos de entrenamiento y validación al 80% y 20% cada uno.
+
+Se desarrollan los modelos de:
+
+-   Regresión Logística binaria
+
+-   Árbol de Clasificación tipo class
+
+-   KNN Vecinos mas cercanos
+
+-   **SVM Lineal**
+
+-   **SVM Polinomial**
+
+-   **SVM Radial**
+
+Los modelo se aceptan si tienen un valor de exactitud por encima del 70%.
+
+# Fundamento teórico
+
+El método de clasificación-regresión Máquinas de Vector Soporte (Vector Support Machines, SVMs) fue desarrollado en la década de los 90, dentro de campo de la ciencia computacional.
+
+Si bien originariamente se desarrolló como un método de clasificación binaria, su aplicación se ha extendido a problemas de clasificación múltiple y regresión. SVMs ha resultado ser uno de los mejores clasificadores para un amplio abanico de situaciones, por lo que se considera uno de los referentes dentro del ámbito de aprendizaje estadístico y machine learning. <https://www.cienciadedatos.net/documentos/34_maquinas_de_vector_soporte_support_vector_machines>
+
+Las Máquinas Soporte Vectorial (SVM, del inglés Support Vector Machines) tienen su origen en los trabajos sobre la teoría del aprendizaje estadístico, inicialmente, las SVM fueron pensadas para aclarar y resolver problemas de clasificación binaria, su aplicación se ha extendido a problemas de clasificación múltiple y regresión [@castañeda2019].
+
+En un espacio p-dimensional, un hiperplano se define como un subespacio plano y afín de dimensiones $p-1$. El término afín significa que el subespacio no tiene por qué pasar por el origen. En un espacio de dos dimensiones, el hiperplano es un subespacio de 1 dimensión, es decir, una recta.
+
+SVM también puede utilizarse como un método de regresión (support vector regression o SVR). SVR sigue los mismos principios que el SVM para clasificación, con alguna diferencia en cuanto al algoritmo (se establece un margen de tolerancia para las predicciones, épsilon).
+
+La esencia de las SVM puede ser entendida sin el uso de fórmulas, para lo cual es necesario el conocimiento de cuatro conceptos básicos: el hiperplano de separación, el hiperplano óptimo, el margen suave y la función kernel o núcleo [@cuevas2019].
+
+**Hiperplano de separación**: Las SVM poseen una gran capacidad para aprender a partir de un conjunto de N muestras experimentales denominado conjunto de entrenamiento: $(x_1,y_1),(x_2,y_2),...,(x_n,y_m)$. Donde cada muestra $(x_i,y_i)$ para $i=1…N$ está formado por un vector de $n$ características $x_iϵR_n$ y a una etiqueta y $iϵR$ que indica la clase $±1$ a la que pertenece cada muestra.
+
+El objetivo es encontrar la función $f:R_n→±1$ que separe los datos en dos clases y que clasifique o pronostique correctamente nuevas muestras perteneciente al conjunto de pruebas o de validación.
+
+En un problema linealmente separable existen muchos hiperplanos que pueden clasificar los datos, pero las SVM no hayan uno cualquiera sino el único que maximiza la distancia entre el y el dato más cercano de cada clase.
+
+![](images/imagen%20hiperplano.jfif)
+
+**El hiperplano de separación óptimo (HSO) y margen máximo**: Está definido por el margen máximo de separación entre las dos clases.
+
+Tomando como referencia la notación de la figura del hiperplano de separación, existen dos hiperplanos que definen las muestras a ambos lados de cada clase:
+
+$$
+w∗x+b=+1
+$$
+
+y $$
+w∗x+b=−1
+$$
+
+que son paralelos al HSO $$
+w∗x+b=0
+$$
+
+El margen máximo está dado por la distancia entre los hiperplanos paralelos y el HSO, cuyo resultado geométrico equivale a $2/||w||$.
+
+El vector de pesos $w$ contiene la ponderación de cada atributo, indicando qué tanto aportan en el proceso de clasificación o regresión.
+
+**Hiperplano óptimo** significa hallar el mejor hiperplano de separación es la esencia del problema de maximización con restricciones lineales.
+
+La expresión final del clasificador buscado finalmente sería donde el signo resultante indicará la clase a la cual pertenece un dato determinado.
+
+**Margen suave**: Cuando los datos de prueba no son linealmente separables se pueden adoptar dos técnicas para resolver el problema: con optimización "margen suave" y a través de *kernel*.
+
+El proceso de optimización del hiperplano en este caso incorpora un parámetro de regularización o *tuning* parameter $C$, el cual controla la severidad permitida de las violaciones de las n observaciones sobre el margen e hiperplano, y a la vez, el equilibrio bias-varianza. Sin entrar en detalles matemáticos, si $C>0$, no más de $C$ observaciones pueden encontrarse en el lado incorrecto del hiperplano. Si $C$ es pequeño, los márgenes serán estrechos pues muy pocas observaciones podrán estar en el lado incorrecto del mismo (esto equivale a un modelo bastante bien ajustado a los datos, el cual puede tener poco bias pero mucha varianza). Conforme se incrementa $C$, mayor es la tolerancia a las violaciones sobre el margen, con lo que el margen será más ancho y habrá más vectores soporte (esto equivale a un modelo más flexible y con mayor bias pero menor varianza). Si $C=0$, el clasificador es equivalente al *maximal margin classifier*, pues no están permitidas violaciones sobre el margen (todas las observaciones deben estar correctamente clasificadas).
+
+En la práctica el parámetro $C$ se elige u optimiza por validación cruzada.
+
+**Función Kernel**: La mayoría de los eventos reales no son separables linealmente por lo que se dificulta la definición del HSO. La figura 2 muestra un conjunto de datos donde no pueden ser separados linealmente por un hiperplano en $Rn$, pero si en un espacio de mayor dimensión $Rh$
+
+Se presenta una imagen hiperplano lineal no lineal, siendo un representación de datos a una mayor dimensión y separación lineal de las clases en el nuevo espacio.
+
+![](images/clases%20en%20el%20nuevo%20espacio.jfif)
+
+Cuando no existe una apropiada superficie lineal de decisión en el espacio original de los datos, se considera un mapeo del vector de entrada en un espacio de mayor dimensión $Rh$ llamado espacio de características, que está dotado de producto escalar.
+
+Eligiendo la transformación adecuada $Rn→Rh$ se realiza el mapeo y se busca el HSO siguiendo lo dicho anteriormente del apartado anterior que será lineal en $Rh$, pero representa un espacio no lineal en $Rn$.
+
+Este tipo de proyección hacia un espacio de característica es a través de las funciones denominadas kernels: $K(xi,xk)=ᶲ(xi)∗ᶲ(xk)$.
+
+Las funciones kernel permiten realizar las operaciones algebraicas en $Rh$ de manera eficiente y sin conocer a la transformación $ᶲ$. Así, en principio cualquier técnica de análisis multivariado para datos $xϵRn$ que se pueda reformular en un algoritmo computacional en términos de productos escalares, se puede generalizar a los datos transformados utilizando las funciones núcleos.
+
+Existen varias funciones kernel o núcleos, destacando las siguientes cuatro, consideradas básicas:
+
+Kernel lineal:
+
+$$
+K(xi,xj)=xiT∗xj
+$$
+
+Kernel polinomial:
+
+$$
+K(xi,xj)=(p+ΥxiT∗xj)d,Υ>0
+$$
+
+Kernel gaussiano RBF:
+
+$$
+K(xi,xj)=exp(−Υ||xi−xj||2),Υ>0
+$$
+
+Entonces: las máquinas de vectores de soporte separan los datos en diferentes clases de datos mediante el uso de un hiperplano. Este hiperplano, está respaldado por el uso de vectores de soporte. Estos vectores se utilizan para garantizar que el margen del hiperplano sea lo más grande posible. [@datagio2022].
+
+En R, la librerías *e1071* contienen los algoritmos necesarios para obtener modelos de clasificación simple, múltiple y regresión, basados en *Support Vector Machines*.
+
+Existe la librería *LiblineaR* que contien efunciones para clasificación en el tratamiento de grandes datos.
+
+Para este caso se utiliza la librería *e1071*
+
+# Desarrollo
+
+## Cargar librerías
+
+```{r warning=FALSE, message=FALSE}
+library(knitr) # Para ver tablas mas amigables en formato html markdown
+library(ggplot2) # Gráficas
+
+library(dplyr) # Varias operaciones 
+
+library(caret) # Para particionar datos de entranamiento y de validación
+
+#install.packages("e1071") # Para SVM
+library(e1071)
+
+library(plotly) # Para gráficas interactivas
+```
+
+## Cargar datos
+
+Cargar datos de manera local o con URL.
+
+Se cargan dos conjuntos de datos *datos1* y *dato2*, ambos contienen la misma inforamción solo que el segundo es la transforamación a valores numéricos de los valores cateóricos de *datos1*.
+
+```{r}
+datos_cat <- read.csv("https://raw.githubusercontent.com/rpizarrog/Machine-Learning-con-R/main/datos/heart_2020_cleaned.csv", stringsAsFactors = TRUE, encoding = "UTF-8")
+
+datos_num <- read.csv("https://raw.githubusercontent.com/rpizarrog/Analisis-Inteligente-de-datos/main/datos/danios%20al%20corazon%20numericos%20limpios.csv", stringsAsFactors = TRUE, encoding = "UTF-8")
+
+
+
+```
+
+## Explorar datos
+
+Son 319795 registros y 18 variables. El 80% serán datos de entrenamiento y el 20% serán datos de validación.
+
+La variable *HeartDisease* es de tipo factor y tiene dos niveles *"No" y "Yes".*
+
+### Estructura de los datos
+
+```{r}
+str(datos_cat)
+# summary(datos_cat)
+```
+
+```{r}
+str(datos_num)
+# summary(datos_num)
+```
+
+### Primeros datos categóricos
+
+```{r}
+kable(x = head(datos_cat, 10), caption = "Primeros diez registros datos con valores categóricos")
+```
+
+### Primeros datos numéricos
+
+```{r}
+kable(x = head(datos_num, 10), caption = "Primeros diez registros datos con valores categóricos")
+```
+
+## Limpiar datos
+
+Se trabajará con el conjunto de datos *datos_num* por la conveniencia en el modelo.
+
+Crear variable llamada *HeartDisease01* que se utilizará en el modelo de **SVM** tendrá valores **0** de para no daño y **1** para daño del corazón.
+
+```{r}
+#datos_num = mutate (datos_num,HeartDisease01=if_else(HeartDisease=='Yes',1,0))
+```
+
+Eliminar la variable *HeartDisease* del conjunto de datos de *datos_num.*
+
+```{r}
+#datos_num <- select(datos_num, -HeartDisease)
+```
+
+## Las variables de interés
+
+Todas las variables son de entrada o variables independientes:
+
+-   "*BMI*": Indice de masa corporal con valores entre 12.02 y 94.85.
+
+-   "*Smoking*": Si la persona es fumadora o no con valores categóritos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*AlcoholDrinking*" : Si consume alcohol o no, con valores categóricos de 'Yes' o 'No'.[1 \| 2]
+
+-   "*Stroke*": Si padece alguna anomalía cerebrovascular, apoplejia o algo similar, con valores categóricos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*PhysicalHealth*" Estado físico en lo general con valores entre 0 y 30.
+
+-   "*MentalHealth*". Estado mental en lo general con valores entre 0 y 30.
+
+-   "*DiffWalking*" . Que si se le dificulta caminar o tiene algún padecimiento al caminar, con valores categóritoc de 'Yes' o 'No'.[1 \| 2]
+
+-   "*Sex*": Género de la persona, con valores de 'Female' y 'Male' para distinguir al género femenino y masculino respectivamente. [1 \| 2]
+
+-   "*AgeCategory*": Una clasificación de la edad de la persona de entre 18 y 80 años. La primera categoría con un rango de edad entre 18-24, a partir de 25 con rangos de 5 en 5 hasta la clase de 75-80 y una última categoría mayores de 80 años. [1 - 13]
+
+-   "*Race*". Raza u origen de la persona con valores categóricos de '*American Indian/Alaskan Native', 'Asian','Black', 'Hispanic', 'Other'* y'*White'.* [1 - 6]
+
+-   "*Diabetic*". Si padece o ha padecido de diabetes en cuatro condiciones siendo Yes y No para si o no: 'No', 'borderline diabetes' condición antes de detectarse diabetes tipo 2, 'Yes', y 'Yes (during pregnancy)' durante embarazo. [1 - 4]
+
+-   "*PhysicalActivity*" que si realiza actividad física, con valores categóricos de 'Yes' o 'No'. [1 \| 2]
+
+-   "*GenHealth*": EStado general de salud de la persona con valores categóricos de 'Excellent', 'Very good', 'Good', 'Fair' y 'Poor' con significado en español de excelente, muy buena, buena, regular y pobre o deficiente. [1 - 5]
+
+-   "*SleepTime*": valor numérico de las horas de sueño u horas que duerme la persona con valores en un rango entre 1 y 24.
+
+-   "*Asthma*": si padece de asma o no, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+-   "*KidneyDisease*": si tiene algún padecimiento en los riñones, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+-   "*SkinCancer*": si padece algún tipo de cáncer de piel, con valores categóricos de 'Yes' o 'No'. [1 \| 2].
+
+-   La variable de interés como dependiente o variable de salida es la de daño al corazón (*HeartDisease*), con valores categóricos de 'Yes' o 'No'*.* Ahora con la variable *HeartDisease01* para valores o para No daño y 1 para daño al corazón,
+
+## Datos de entrenamiento y validación
+
+Se parten los datos en en datos de entrenamiento con el 80% y datos de validación con el 20%.
+
+```{r}
+set.seed(2022)
+entrena <- createDataPartition(y = datos_num$HeartDisease, 
+                               p = 0.8, 
+                               list = FALSE, 
+                               times = 1)
+# Datos entrenamiento
+datos.entrenamiento <- datos_num[entrena, ]  # [renglones, columna]
+# Datos validación
+datos.validacion <- datos_num[-entrena, ]
+```
+
+### Datos de entrenamiento
+
+Se muestran los primeros 20 registros datos de entrenamiento. Son 255,836 observaciones en datos de entrenamiento que representa el 80% del total de los datos
+
+```{r}
+paste("Registros en datos de entrenamiento: ", nrow(datos.entrenamiento))
+kable(head(datos.entrenamiento, 20), caption = "Primeros 20 registros de datos de entrenamiento")
+```
+
+### Datos de validación
+
+Se muestran los primeros 20 registros de datos de validación . Son 63,959 observaciones en datos de validación que representa el 20% del total de los datos
+
+```{r}
+paste("Registros en datos de validación: ", nrow(datos.validacion))
+
+kable(head(datos.validacion, 20), caption = "Primeros 20 registros de datos de validación")
+```
+
+### Tamaño de muestra
+
+Dado que la estimación del costo consume recursos de procesamiento, sobre todo tiempo, se calcula una muestra estimada al 99% y 2% de margen de error, Siendo 255836 registros en los datos de entrenamiento, la cantidad de muestra estimada debe ser 4,024 observaciones. $$
+n=\frac{Z^2_{_{\alpha/2}}Npq}{e^2(N-1)+Z^2_{_{\alpha/2}}pq}
+$$
+
+```{r}
+set.seed(2020)
+n <- 4024
+muestra <- sample(x = 1:nrow(datos.entrenamiento), size = n, replace = FALSE)
+```
+
+## Modelos de clasificación SVM
+
+### Modelo SVM Kernel lineal
+
+Se construye el modelo de *SVM* de tipo lineal con los datos de entrenamiento. Con el paquete *e1071* se genera el modelo de SVM
+
+A la hora de ajustar un *support vector classifier*, es importante tener en cuenta que el hiperparámetro C (*cost*) controla el equilibrio bias-varianza y la capacidad predictiva del modelo, ya que determina la severidad permitida respecto a las violaciones sobre el margen.
+
+En otras palabras, se necesita fijar un margen de separación entre observaciones a priori. Por ello es recomendable evaluar distintos valores del mismo mediante validación cruzada y escoger el valor óptimo.
+
+*Importante*: Estandarizar los predictores cuando no estén medidos en la misma escala, para que los de mayor magnitud no tengan mayor influencia que el resto. Un argumento disponible en la función *svm()* para ello es *scale* = TRUE).
+
+Para ajustar un *support vector classifier*, el kernel indicado en la función *svm()* ha de ser lineal. Se obtiene un valor de coste óptimo mediante validación cruzada utilizando la función *tune()* del paquete *e1071*.
+
+#### Validación cruzada para mejor costo del modelo SVM lineal
+
+La expresión *HeartDisease \~ .* en la función *tune()* significa que la variable dependiente es *HeartDsiease* y que depende de todas las variables independientes.
+
+Esto es similar a declarar la fórmula como *HeartDsiease \~ BMI+ Smoking+ AlcoholDrinking+ Stroke+ PhysicalHealth+ MentalHealth+ DiffWalking+ Sex+ AgeCategory+ Race+ Diabetic+ PhysicalActivity+ GenHealth+ SleepTime+ Asthma+ KidneyDisease+ SkinCancer.*
+
+Se utiliza la muestra para estimar el mejor costo en el modelo.
+
+Se toma el tiempo para procesar el mejor costo para el modelo de kernel lineal para el modelo más óptimo.
+
+```{r}
+set.seed(2020)
+t_inicial <- proc.time()[3]
+tuning <- tune(svm, HeartDisease ~ ., data = datos.entrenamiento[muestra, ], 
+               kernel = "linear", 
+               ranges = list(cost = c(0.001, 0.01, 0.1, 1, 5, 10, 15, 20)), 
+               scale = TRUE)
+
+
+t_final <- proc.time()[3] - t_inicial
+paste("Tiempo procesamiento con ", n, " registros, fue de:", round(t_final, 2), " segundos")
+```
+
+```{r}
+summary(tuning)
+```
+
+Para esta muestra del conjunto de datos de entrenamiento, el mejor valor de costo es `r min(tuning$best.parameters$cost)` que se debe utilizar al momento de construir el modelo de SVM.
+
+#### Graficando los costos de la función tune()
+
+```{r}
+plot_ly(x = tuning$performances$cost, y = tuning$performances$error, type = 'scatter', mode = 'lines')
+```
+
+#### Mejor modelo para kernel lineal
+
+```{r}
+modelo_kl <- tuning$best.model
+summary(modelo_kl)
+```
+
+#### Construir el modelo kernel lineal
+
+Se construye el modelo con la muestra de los datos de entrenamiento igual al modelo óptimo sugerido con costo igual 0.001 que se obtiene de la variable "*tuning\$performances\$cost*"
+
+```{r}
+mejor_costo <- as.numeric(tuning$best.parameters)
+paste ("Mejor costo", mejor_costo)
+
+modelo.klin <- svm(HeartDisease ~ ., data = datos.entrenamiento[muestra, ], kernel = "linear", cost = mejor_costo
+, scale = TRUE)
+
+summary(modelo.klin)
+```
+
+#### Predicciones kernel lineal
+
+```{r}
+predicciones <- predict(object = modelo.klin, datos.validacion)
+
+```
+
+#### Evaluación del modelo
+
+##### Construir matriz de comparación
+
+```{r}
+datos.comparar <- data.frame("real" = datos.validacion$HeartDisease, "predicho" = predicciones)
+
+kable(head(datos.comparar, 20), caption = "Datos a comparar previo a matriz de confusión" )
+```
+
+##### Matriz de confusión
+
+```{r}
+matriz <- confusionMatrix(datos.comparar$real, datos.comparar$predicho)
+
+matriz
+```
+
+Se tiene un valor de *accuracy* = exactitud de 0.9144 o de $91.44\%$ que significa que el modelo le atina en la predicción o clasificación aproximadamente al 91% de cada 100 casos procesados.
+
+#### Predecir un caso nuevo
+
+Se crea un registro de una persona con ciertas condiciones de salud.
+
+```{r}
+# HeartDisease = 'No'
+BMI <- 38
+Smoking <- 1  # 'Yes'
+AlcoholDrinking = 1 # 'Yes'
+Stroke <- 1 # 'Yes'
+PhysicalHealth <- 2 
+MentalHealth <- 5
+DiffWalking <- 1 # 'Yes'
+Sex = 2 # 'Male
+AgeCategory = 11 # '70-74'
+Race = 2 # 'Black'
+Diabetic <- 1 # 'Yes'
+PhysicalActivity = 2 # 'No'
+GenHealth = 1 # "Fair"
+SleepTime = 12
+Asthma = 1 # 'Yes'
+KidneyDisease = 1 # 'Yes'
+SkinCancer = 2 # 'No'
+
+persona <- data.frame(BMI,Smoking, AlcoholDrinking, Stroke, PhysicalHealth, MentalHealth, DiffWalking, Sex, AgeCategory, Race, Diabetic, PhysicalActivity, GenHealth, SleepTime, Asthma, KidneyDisease, SkinCancer)
+persona
+```
+
+La predicción a la condición de la persona es:
+
+```{r}
+prediccion <- predict(object = modelo.klin, newdata = persona)
+prediccion
+```
+
+'No': No tiene daño al corazón
+
+### Modelo SVM Kernel polynomial
+
+Se construye el modelo de *SVM* de tipo polinomial con los datos de entrenamiento.
+
+#### Validación cruzada para mejor costo del modelo SVM polinomial
+
+Se toma el tiempo para procesar el mejor costo para el modelo de kernel polinomial para el modelo más óptimo.
+
+```{r}
+set.seed(2020)
+t_inicial <- proc.time()[3]
+tuning <- tune(svm, HeartDisease ~ ., data = datos.entrenamiento[muestra, ], 
+               kernel = "polynomial", 
+               ranges = list(cost = c(0.001, 0.01, 0.1, 1, 5, 10, 15, 20)), 
+               scale = TRUE)
+
+
+t_final <- proc.time()[3] - t_inicial
+paste("Tiempo procesamiento con ", n, " registros, fue de:", round(t_final, 2), " segundos")
+```
+
+```{r}
+summary(tuning)
+```
+
+Para esta muestra del conjunto de datos de entrenamiento, el mejor valor de costo es `r min(tuning$best.parameters$cost)` que se debe utilizar al momento de construir el modelo polinomial de SVM.
+
+#### Graficando los costos de la función tune()
+
+```{r}
+plot_ly(x = tuning$performances$cost, y = tuning$performances$error, type = 'scatter', mode = 'lines')
+```
+
+#### Mejor modelo para kernel polynomial
+
+```{r}
+modelo_kp <- tuning$best.model
+summary(modelo_kp)
+```
+
+#### Construir el modelo kernel polynomial
+
+Se construye el modelo con la muestra de los datos de entrenamiento igual al modelo óptimo sugerido con costo igual 0.001 que se obtiene de la variable "*tuning\$performances\$cost*"
+
+```{r}
+mejor_costo <- as.numeric(tuning$best.parameters)
+paste ("Mejor costo", mejor_costo)
+
+modelo.kpoly <- svm(HeartDisease ~ ., data = datos.entrenamiento[muestra, ], kernel = "polynomial", cost = mejor_costo
+, scale = TRUE)
+
+summary(modelo.kpoly)
+```
+
+#### Predicciones kernel polynomial
+
+```{r}
+predicciones <- predict(object = modelo.kpoly, datos.validacion)
+
+```
+
+#### Evaluación del modelo
+
+##### Construir matriz de comparación
+
+```{r}
+datos.comparar <- data.frame("real" = datos.validacion$HeartDisease, "predicho" = predicciones)
+
+kable(head(datos.comparar, 20), caption = "Datos a comparar previo a matriz de confusión" )
+```
+
+##### Matriz de confusión
+
+```{r}
+matriz <- confusionMatrix(datos.comparar$real, datos.comparar$predicho)
+
+matriz
+```
+
+Se tiene un valor de *accuracy* = exactitud de 0.9144 o de $91.44\%$ que significa que el modelo le atina en la predicción o clasificación aproximadamente al 91% de cada 100 casos procesados.
+
+#### Predecir un caso nuevo
+
+Se utiliza el mismo registro de una persona con ciertas condiciones de salud para predecir con el modelo polinomial de SVM
+
+```{r}
+# HeartDisease = 'No'
+
+persona
+```
+
+La predicción a la condición de la persona es:
+
+```{r}
+prediccion <- predict(object = modelo.kpoly, newdata = persona)
+prediccion
+```
+
+'No': No tiene daño al corazón
+
+### Modelo SVM Kernel radial
+
+Se construye el modelo de *SVM* de tipo radial con los datos de entrenamiento.
+
+#### Validación cruzada para mejor costo del modelo SVM radial
+
+Se toma el tiempo para procesar el mejor costo para el modelo de kernel radial para el modelo más óptimo.
+
+```{r}
+set.seed(2020)
+t_inicial <- proc.time()[3]
+tuning <- tune(svm, HeartDisease ~ ., data = datos.entrenamiento[muestra, ], 
+               kernel = "radial", 
+               ranges = list(cost = c(0.001, 0.01, 0.1, 1, 5, 10, 15, 20)), 
+               scale = TRUE)
+
+
+t_final <- proc.time()[3] - t_inicial
+paste("Tiempo procesamiento con ", n, " registros, fue de:", round(t_final, 2), " segundos")
+```
+
+```{r}
+summary(tuning)
+```
+
+Para esta muestra del conjunto de datos de entrenamiento, el mejor valor de costo es `r min(tuning$best.parameters$cost)` que se debe utilizar al momento de construir el modelo radial de SVM.
+
+#### Graficando los costos de la función tune()
+
+```{r}
+plot_ly(x = tuning$performances$cost, y = tuning$performances$error, type = 'scatter', mode = 'lines')
+```
+
+#### Mejor modelo para kernel radial
+
+```{r}
+modelo_kr <- tuning$best.model
+summary(modelo_kr)
+```
+
+#### Construir el modelo kernel radial
+
+Se construye el modelo con la muestra de los datos de entrenamiento igual al modelo óptimo sugerido con costo igual 0.001 que se obtiene de la variable "*tuning\$performances\$cost*"
+
+```{r}
+
+mejor_costo <- as.numeric(tuning$best.parameters)
+paste ("Mejor costo", mejor_costo)
+
+modelo.kradial <- svm(HeartDisease ~ ., data = datos.entrenamiento[muestra, ], kernel = "radial", cost = mejor_costo
+, scale = TRUE)
+
+summary(modelo.kradial)
+```
+
+#### Predicciones kernel radial
+
+```{r}
+predicciones <- predict(object = modelo.kradial, datos.validacion)
+
+```
+
+#### Evaluación del modelo
+
+##### Construir matriz de comparación
+
+```{r}
+datos.comparar <- data.frame("real" = datos.validacion$HeartDisease, "predicho" = predicciones)
+
+kable(head(datos.comparar, 20), caption = "Datos a comparar previo a matriz de confusión" )
+```
+
+##### Matriz de confusión
+
+```{r}
+matriz <- confusionMatrix(datos.comparar$real, datos.comparar$predicho)
+
+matriz
+```
+
+Se tiene un valor de *accuracy* = exactitud de 0.914 o de $91.4\%$ que significa que el modelo le atina en la predicción o clasificación aproximadamente al 91% de cada 100 casos procesados.
+
+#### Predecir un caso nuevo
+
+Se utiliza el mismo registro de una persona con ciertas condiciones de salud para predecir con el modelo radial de SVM
+
+```{r}
+persona
+```
+
+La predicción a la condición de la persona es:
+
+```{r}
+prediccion <- predict(object = modelo.kpoly, newdata = persona)
+prediccion
+```
+
+'No': No tiene daño al corazón
+
+# Interpretación
+
+Se construyeron tres modelos de clasificación con el algoritmo de máquinas de soporte vectorial.
+
+Los tres modelos fueron del tipo lineal, polinomial y radia.
+
+En todos los casos el valor de la exactitud *accuracy* y de acuerdo a la matriz de confusión fue de aproximadamente del 91.4% que significa que el modelo le atina aproximadamente a 91 de cada 100 registros.
+
+No existe una contundente diferencia entre los tres modelos en cuanto al estadístico *accuracy*, además los tres predicen No daño al corazón de una persona con ciertas condiciones de salud.
+
+Por otra parte existen otros paquete que son alternativos para construir modelos de SVM, ver: <https://rubenfcasal.github.io/aprendizaje_estadistico/svm-con-el-paquete-kernlab.html>
+
+# Bibliografía
