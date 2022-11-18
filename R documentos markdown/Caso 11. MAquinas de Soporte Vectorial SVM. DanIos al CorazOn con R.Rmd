@@ -643,7 +643,9 @@ prediccion
 
 Se construyeron tres modelos de clasificación con el algoritmo de máquinas de soporte vectorial.
 
-Los tres modelos fueron del tipo lineal, polinomial y radia.
+Para construir los modelo se trabajó con una muestra al 99% de confianza con un margen de error del 2% de los datos de entrenamiento; esto se hizo porque el tiempo de procesamiento con todos los registros de los datos de entrenamiento era muy tardado, razón por la cual se utilizó una muestra de 4,024 registros en lugar de las 255,877 observaciones.
+
+Los tres modelos fueron del tipo lineal, polinomial y radial.
 
 En todos los casos el valor de la exactitud *accuracy* y de acuerdo a la matriz de confusión fue de aproximadamente del 91.4% que significa que el modelo le atina aproximadamente a 91 de cada 100 registros.
 
