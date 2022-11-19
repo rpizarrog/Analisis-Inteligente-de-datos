@@ -14,7 +14,7 @@ bibliography: references.bib
 
 # Objetivo
 
-Implementar el modelo de bosques aleatorios (random forest (RF) con programación R para resolver la tarea de clasificación de una condición de salud de las personas mediante predicción de anomalías de corazón evaluando la exactitud del modelo mediante la matriz de confusión.
+Implementar el modelo de bosques aleatorios (*random forest (RF*) con programación R para resolver la tarea de clasificación de una condición de salud de las personas mediante predicción de anomalías de corazón evaluando la exactitud del modelo mediante la matriz de confusión.
 
 # Descripción
 
@@ -44,13 +44,12 @@ Se desarrollan los modelos de:
 
 -   **Bosques aleatorios. Random Forest**
 
-Los modelo se aceptan si tienen un valor de exactitud por encima del 70%.
+El modelo se acepta si tienen un valor de exactitud = *accuracy* por encima del 70%.
 
 # Fundamento teórico
 
-Pendiente ...
-
-Pendiente ...
+Random Forest o Bosques Aleatorios fue propuesto por ([Ho 1995](https://fhernanb.github.io/libro_mod_pred/references.html#ref-Ho1995)) y consiste en crear muchos árboles para luego usarlos en la predicción de la variable de interés. A continuación se muestra una ilustración de la técnica.[@hernandez_modelos_2020]
+[@hernández2021]
 
 # Desarrollo
 
@@ -181,13 +180,11 @@ kable(head(datos.validacion, 20), caption = "Primeros 20 registros de datos de v
 
 ### Tamaño de muestra
 
-Dado que la estimación del costo consume recursos de procesamiento, sobre todo tiempo, se calcula una muestra estimada al 99% y 2% de margen de error, Siendo 255,836 registros en los datos de entrenamiento, la cantidad de muestra estimada debe ser 4,024 observaciones. 
-
+Dado que la estimación del costo consume recursos de procesamiento, sobre todo tiempo, se calcula una muestra estimada al 99% y 2% de margen de error, Siendo 255,836 registros en los datos de entrenamiento, la cantidad de muestra estimada debe ser 4,024 observaciones.
 
 $$
 n=\frac{Z^2_{_{\alpha/2}}Npq}{e^2(N-1)+Z^2_{_{\alpha/2}}pq}
 $$
-
 
 ```{r}
 set.seed(2020)
@@ -203,7 +200,9 @@ Esto es similar a declarar la fórmula como *HeartDsiease \~ BMI+ Smoking+ Alcoh
 
 Se utiliza la muestra con `r paste(n, " registros")` para construir el modelo.
 
-El modelo se construye con un valor de *ntree igual a 400* árboles, se utiliza con valor igual *mtry igual 4* que significa las variables aleatorias que de manera aleatoria participan en las ramificaciones; este valor se determina conforme a la recomendación de la ayuda de la función de que sea aproximadamente la raiz cuadrada del número de columnas de los datos que participan en la construcción del modelo. Fueron 18 variables entonces aproximadamente y/o redeondeado la raiz cuadrada es cuatro.
+El modelo se construye con un valor de *ntree igual a 1000 (se probó con 400, 500 y 1000)* árboles,.
+
+Se utiliza con valor igual *mtry igual 4* que significa las variables que de manera aleatoria participan en las ramificaciones; este valor se determina conforme a la recomendación de la ayuda de la función de que sea aproximadamente la raíz cuadrada del número de columnas de los datos que participan en la construcción del modelo. Fueron 18 variables entonces aproximadamente y/o redondeado la raíz cuadrada es cuatro.
 
 Se toma el tiempo para procesar la construcción de modelo.
 
@@ -212,7 +211,7 @@ set.seed(2020)
 t_inicial <- proc.time()[3]
 
 modelo_rf <- randomForest(HeartDisease ~ ., data=datos.entrenamiento[muestra, ], 
-                      ntree=400, mtry=4,
+                      ntree=1000, mtry=4,
                       proximity=TRUE)
 
 t_final <- proc.time()[3] - t_inicial
@@ -224,7 +223,7 @@ paste("Tiempo procesamiento con ", n, " registros, fue de:", round(t_final, 2), 
 modelo_rf
 ```
 
-### Predicciones random forest
+### Predicciones *random forest*
 
 ```{r}
 predicciones <- predict(object = modelo_rf, datos.validacion)
@@ -241,7 +240,6 @@ datos.comparar <- data.frame("real" = datos.validacion$HeartDisease, "predicho" 
 kable(head(datos.comparar, 20), caption = "Datos a comparar previo a matriz de confusión" )
 ```
 
-
 #### Matriz de confusión
 
 ```{r}
@@ -250,14 +248,14 @@ matriz <- confusionMatrix(datos.comparar$real, datos.comparar$predicho)
 matriz
 ```
 
-Se tiene un valor de *accuracy* = exactitud de 0.9134 o de $91.34\%$ que significa que el modelo le atina en la predicción o clasificación aproximadamente al 91% de cada 100 casos procesados.
+Se tiene un valor de *accuracy* = exactitud de 0.9139 o de $91.39\%$ que significa que el modelo le atina en la predicción o clasificación aproximadamente al 91% de cada 100 casos procesados.
 
 #### Predecir un caso nuevo
 
 Se crea un registro de una persona con ciertas condiciones de salud.
 
 ```{r}
-HeartDisease = 'No'
+# HeartDisease = 'No'
 BMI <- 38
 Smoking <- 'Yes'
 AlcoholDrinking = 'Yes'
@@ -324,7 +322,6 @@ prediccion
 ```
 
 'No': No tiene daño al corazón
-
 
 # Interpretación
 
